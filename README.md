@@ -15,11 +15,11 @@ Admin ─► /admin (password) ─► same app. Changes are live on save.       
 
 | Path | What it is |
 | --- | --- |
-| `src/index.tsx` | Public routes, the contact form, photo serving, security headers |
+| `src/index.tsx` | The page (`/`), the contact form, photo serving, redirects from old page addresses, security headers |
 | `src/admin/routes.tsx` | Admin panel: sign-in, editors, photos, enquiries, password |
 | `src/content/schema.ts` | The editable documents and their fields. **Add a field here to make it editable.** |
 | `src/content/defaults.ts` | Starting content from the client brief, used until a document is saved |
-| `src/views/site/*`, `src/views/admin/*` | Page templates; the admin editor form is generated from `schema.ts` |
+| `src/views/site/*`, `src/views/admin/*` | Templates: the one-page site and the admin panel; the admin editor form is generated from `schema.ts` |
 | `src/platform/` | SQLite (`node:sqlite`), photo storage on disk, settings |
 | `src/server.ts` | Node entry point; `src/manage.ts`: migrate / set-password / backup |
 | `public/static/` | CSS, JS and favicon |
@@ -29,7 +29,7 @@ Admin ─► /admin (password) ─► same app. Changes are live on save.       
 
 ### How editing works
 
-Each page's content is one JSON document in the `content` table (`home`, `about`, `services`, `projects`, `contact`, `settings`). The editor is generated from the field list in `src/content/schema.ts`, and submissions are validated against that list. Saved values are merged over `defaults.ts`, so a field added in code shows its default until someone edits it.
+The website is a single page; the menu scrolls to its sections (Home, About, Services, Projects, Approach, Contact). Each section's content is one JSON document in the `content` table (`home`, `about`, `services`, `projects`, `approach`, `contact`, plus `settings` for details used everywhere), with its own screen in the admin panel. The editor is generated from the field list in `src/content/schema.ts`, and submissions are validated against that list. Saved values are merged over `defaults.ts`, so a field added in code shows its default until someone edits it.
 
 Photos are resized **in the admin's browser** to 480, 960 and 1600 px WebP copies (JPEG where WebP isn't supported, e.g. older Safari), so the server never has to process images. Every photo URL is cached for a year, which is safe because each upload gets a new ID. Cloudflare's edge serves most photo and CSS requests, so they rarely reach the home server.
 

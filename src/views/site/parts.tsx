@@ -17,13 +17,14 @@ export type Site = {
 
 export type PageMeta = { title: string; description: string; image?: string };
 
-const NAV: [string, string][] = [
-  ['/', 'Home'],
-  ['/about', 'About'],
-  ['/services', 'Services'],
-  ['/projects', 'Projects'],
-  ['/about#approach', 'Approach'],
-  ['/contact', 'Contact'],
+/** The page's sections, in order. The menu, footer and buttons all link to these. */
+export const SECTIONS: [string, string][] = [
+  ['home', 'Home'],
+  ['about', 'About'],
+  ['services', 'Services'],
+  ['projects', 'Projects'],
+  ['approach', 'Approach'],
+  ['contact', 'Contact'],
 ];
 
 const CATEGORY_LABEL = Object.fromEntries(PROJECT_CATEGORIES.map((c) => [c.value, c.label]));
@@ -88,7 +89,7 @@ function LogoMark({ light }: { light?: boolean }) {
 function Logo({ site, light, tagline }: { site: Site; light?: boolean; tagline: string }) {
   const logo = site.docs.settings.logo ? site.media.get(site.docs.settings.logo) : undefined;
   return (
-    <a class="logo" href="/" aria-label="Drishti Greens, home">
+    <a class="logo" href="/#home" aria-label="Drishti Greens, home">
       {logo && !light ? (
         <img class="logo-img" src={urlAtLeast(logo, 480)} alt="Drishti Greens" width={logo.width} height={logo.height} />
       ) : (
@@ -150,7 +151,6 @@ export function Layout({ site, meta, children, scripts }: { site: Site; meta: Pa
     ...(s.email ? { email: s.email } : {}),
     ...(s.address ? { address: s.address } : {}),
   };
-  const services = site.docs.services.items.filter((x) => x.visible).slice(0, 5);
 
   return (
     <html lang="en-IN">
@@ -204,16 +204,13 @@ export function Layout({ site, meta, children, scripts }: { site: Site; meta: Pa
           <div class="wrap">
             <Logo site={site} tagline={s.tagline} />
             <nav class="nav" id="nav" aria-label="Main">
-              {NAV.map(([href, label]) => {
-                const active = href === '/' ? site.path === '/' : !href.includes('#') && site.path.startsWith(href);
-                return (
-                  <a href={href} class={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}>
-                    {label}
-                  </a>
-                );
-              })}
+              {SECTIONS.map(([id, label]) => (
+                <a href={`/#${id}`} data-section={id}>
+                  {label}
+                </a>
+              ))}
             </nav>
-            <a class="btn btn-gold header-cta" href="/contact">
+            <a class="btn btn-gold header-cta" href="/#contact">
               Discuss your project
             </a>
             <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
@@ -235,18 +232,16 @@ export function Layout({ site, meta, children, scripts }: { site: Site; meta: Pa
             <div>
               <h2 class="footer-h">Explore</h2>
               <ul>
-                <li><a href="/about">About us</a></li>
-                <li><a href="/services">Services</a></li>
-                <li><a href="/projects">Projects</a></li>
-                <li><a href="/about#approach">Our approach</a></li>
-                <li><a href="/contact">Contact</a></li>
+                {SECTIONS.slice(1).map(([id, label]) => (
+                  <li><a href={`/#${id}`}>{label}</a></li>
+                ))}
               </ul>
             </div>
             <div>
-              <h2 class="footer-h">Services</h2>
+              <h2 class="footer-h">Areas we serve</h2>
               <ul>
-                {services.map((x) => (
-                  <li><a href={`/services/${x.slug}`}>{x.title}</a></li>
+                {s.service_areas.map((a) => (
+                  <li>{a}</li>
                 ))}
               </ul>
             </div>
@@ -257,7 +252,7 @@ export function Layout({ site, meta, children, scripts }: { site: Site; meta: Pa
                 {wa && <li><a href={wa} rel="noopener">WhatsApp</a></li>}
                 {s.email && <li><a href={`mailto:${s.email}`}>{s.email}</a></li>}
                 {s.address && <li class="addr">{s.address}</li>}
-                <li><a href="/contact">Send an enquiry</a></li>
+                <li><a href="/#contact">Send an enquiry</a></li>
               </ul>
             </div>
           </div>
@@ -281,34 +276,17 @@ export function Layout({ site, meta, children, scripts }: { site: Site; meta: Pa
 
 // ---- Shared sections ----
 
-export function Banner({ site, image, title, text, crumb }: { site: Site; image: string; title: string; text?: string; crumb?: [string, string] }) {
-  return (
-    <section class="page-banner on-photo">
-      <Img site={site} id={image} sizes="100vw" alt="" eager />
-      <div class="wrap">
-        {crumb && (
-          <nav class="crumb" aria-label="Breadcrumb">
-            <a href="/">Home</a> / <a href={crumb[0]}>{crumb[1]}</a>
-          </nav>
-        )}
-        <h1 class="h1">{title}</h1>
-        {text && <p>{text}</p>}
-      </div>
-    </section>
-  );
-}
-
 export function WhyBand({ site }: { site: Site }) {
-  const h = site.docs.home;
+  const a = site.docs.about;
   return (
     <section class="dark section">
       <div class="wrap">
         <div class="section-head">
           <span class="eyebrow">Why choose Drishti Greens</span>
-          <h2 class="h2">{h.why_heading}</h2>
+          <h2 class="h2">{a.why_heading}</h2>
         </div>
         <div class="why-grid">
-          {h.why_items.map((w) => (
+          {a.why_items.map((w) => (
             <div class="why-item">
               <Icon name={w.icon} />
               <h3>{w.title}</h3>
@@ -316,62 +294,14 @@ export function WhyBand({ site }: { site: Site }) {
             </div>
           ))}
         </div>
-        {h.care_title && (
+        {a.care_title && (
           <div class="care">
-            <h3>{h.care_title}</h3>
+            <h3>{a.care_title}</h3>
             <div class="copy">
-              <Paras text={h.care_text} />
+              <Paras text={a.care_text} />
             </div>
           </div>
         )}
-      </div>
-    </section>
-  );
-}
-
-export function Approach({ site, white }: { site: Site; white?: boolean }) {
-  const h = site.docs.home;
-  return (
-    <section class={`section${white ? ' approach' : ''}`} id="approach">
-      <div class="wrap">
-        <div class="section-head">
-          <span class="eyebrow">Our approach</span>
-          <h2 class="h2">{h.approach_heading}</h2>
-        </div>
-        <ol class="steps">
-          {h.approach_steps.map((s) => (
-            <li class="step">
-              <span class="dot" aria-hidden="true"></span>
-              <h3>{s.title}</h3>
-              <p>{s.text}</p>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
-
-export function CtaBand({ site }: { site: Site }) {
-  const h = site.docs.home;
-  const wa = whatsappHref(site.docs.settings.whatsapp, 'Hello Drishti Greens, I would like to discuss a landscaping project.');
-  return (
-    <section class="cta on-photo">
-      <Img site={site} id={h.cta_image} sizes="100vw" alt="" />
-      <div class="wrap">
-        {h.cta_eyebrow && <span class="eyebrow">{h.cta_eyebrow}</span>}
-        <h2 class="h2">{h.cta_heading}</h2>
-        {h.cta_text && <p>{h.cta_text}</p>}
-        <div class="actions">
-          <a class="btn btn-gold" href="/contact">
-            Start a conversation
-          </a>
-          {wa && (
-            <a class="btn btn-ghost" href={wa} rel="noopener">
-              WhatsApp us
-            </a>
-          )}
-        </div>
       </div>
     </section>
   );
@@ -381,7 +311,7 @@ export function CtaBand({ site }: { site: Site }) {
  *  'featured', 'all' or a category value. Hidden cards stay in the page so filtering is instant. */
 export function Gallery({ site, items, initial, chips }: { site: Site; items: Project[]; initial: string; chips: 'home' | 'all' | 'none' }) {
   const present = PROJECT_CATEGORIES.filter((c) => items.some((p) => p.category === c.value));
-  const first: [string, string][] = chips === 'home' ? [['featured', 'Featured']] : [['all', 'All projects']];
+  const first: [string, string][] = chips === 'home' ? [['featured', 'Featured'], ['all', 'All']] : [['all', 'All projects']];
   const chipList = [...first, ...present.map((c): [string, string] => [c.value, c.label])];
   const shows = (p: Project) =>
     initial === 'all' || (initial === 'featured' ? p.featured : p.category === initial);

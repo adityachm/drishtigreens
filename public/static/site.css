@@ -16,15 +16,19 @@
   --body: "Karla", "Helvetica Neue", Arial, sans-serif;
   --gutter: clamp(16px, 4vw, 40px);
   --max: 1240px;
+  /* Height of the sticky header, so a section scrolled to from the menu isn't hidden under it */
+  --header-h: 80px;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+section[id] { scroll-margin-top: var(--header-h); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .skip { position: absolute; left: -9999px; top: 8px; z-index: 100; background: var(--white); color: var(--forest); padding: 10px 16px; font-weight: 700; }
 .skip:focus { left: 8px; }
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.65; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.65; }
 img { display: block; max-width: 100%; height: auto; }
 a { color: inherit; }
 h1, h2, h3 { font-family: var(--display); font-weight: 400; text-wrap: balance; margin: 0; line-height: 1.15; }
@@ -104,7 +108,8 @@ p { margin: 0; }
 
 /* Services */
 .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 2.4vw, 32px); }
-.svc { display: grid; grid-template-rows: auto 1fr; background: var(--white); text-decoration: none; color: inherit; border: 1px solid var(--line); transition: transform .3s, box-shadow .3s; }
+.svc { position: relative; display: grid; grid-template-rows: auto 1fr; background: var(--white); color: inherit; border: 1px solid var(--line); transition: transform .3s, box-shadow .3s; }
+.svc:focus-within { outline: 2px solid var(--gold); outline-offset: 3px; }
 .svc:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(20, 42, 30, .1); }
 .svc figure { margin: 0; aspect-ratio: 4 / 3; overflow: hidden; background: var(--line); }
 .svc img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
@@ -112,7 +117,21 @@ p { margin: 0; }
 .svc .txt { display: grid; grid-template-rows: auto 1fr auto; gap: 12px; padding: 24px 24px 26px; }
 .svc h3 { font-size: 21px; text-transform: uppercase; letter-spacing: .04em; color: var(--forest); }
 .svc p { font-size: 15.5px; color: var(--muted); }
-.svc .more { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-text); }
+.svc .more { justify-self: start; padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-text); }
+.svc .more:focus-visible { outline: none; }
+/* The whole card opens the description */
+.svc .more::after { content: ""; position: absolute; inset: 0; }
+
+dialog.svc-modal { border: 0; padding: 0; width: min(940px, 94vw); max-height: 90vh; background: var(--white); color: var(--ink); overflow: auto; }
+dialog.svc-modal::backdrop { background: rgba(10, 20, 14, .72); }
+.svc-modal-body { display: grid; grid-template-columns: 5fr 7fr; }
+.svc-modal-img { width: 100%; height: 100%; min-height: 320px; object-fit: cover; }
+.svc-modal-copy:only-child { grid-column: 1 / -1; }
+.svc-modal-copy { display: grid; gap: 16px; align-content: start; padding: clamp(24px, 4vw, 48px); }
+.svc-modal-copy .h2 { font-size: clamp(26px, 3vw, 36px); padding-right: 40px; }
+.svc-modal-copy p { color: var(--muted); }
+.svc-modal-copy .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.svc-modal-close { position: absolute; top: 12px; right: 12px; z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--white); color: var(--ink); font-size: 24px; line-height: 1; cursor: pointer; }
 
 /* Profile */
 .profile { background: var(--white); }
@@ -228,14 +247,6 @@ dialog.lightbox button { grid-row: 1 / span 2; grid-column: 2; width: 44px; heig
 .img-missing { width: 100%; height: 100%; min-height: 160px; background: repeating-linear-gradient(135deg, var(--line) 0 12px, #E6E9E1 12px 24px); }
 .svc figure .img-missing { min-height: 0; }
 
-.page-banner { position: relative; color: var(--white); background: var(--forest-2); overflow: hidden; }
-.page-banner > img, .page-banner > .img-missing { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.page-banner::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(20, 42, 30, .86), rgba(20, 42, 30, .45) 70%, rgba(20, 42, 30, .25)); }
-.page-banner .wrap { position: relative; z-index: 2; display: grid; gap: 16px; padding-block: clamp(72px, 10vw, 128px) clamp(56px, 8vw, 96px); }
-.page-banner .h1 { font-size: clamp(36px, 5.4vw, 64px); text-transform: uppercase; letter-spacing: .02em; max-width: 18ch; }
-.page-banner p { font-size: clamp(17px, 1.6vw, 20px); color: var(--on-dark); max-width: 56ch; }
-.crumb { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--on-dark-muted); }
-.crumb a { color: var(--gold-soft); text-decoration: none; }
 
 .split-section .wrap { display: grid; grid-template-columns: 7fr 5fr; gap: clamp(32px, 6vw, 88px); align-items: center; }
 .split-section.reverse .wrap { grid-template-columns: 5fr 7fr; }
@@ -244,22 +255,7 @@ dialog.lightbox button { grid-row: 1 / span 2; grid-column: 2; width: 44px; heig
 .split-section .copy p { color: var(--muted); }
 .split-img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
 
-.closing { text-align: center; }
-.closing .wrap { display: grid; gap: 14px; justify-items: center; }
-.closing-line { font-family: var(--display); font-size: clamp(28px, 4vw, 48px); color: var(--forest); text-transform: uppercase; letter-spacing: .03em; text-wrap: balance; }
-.closing-sub { color: var(--gold-text); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 14px; }
 
-.service-detail { display: grid; grid-template-columns: 7fr 4fr; gap: clamp(32px, 6vw, 80px); align-items: start; }
-.service-detail .copy { display: grid; gap: 18px; font-size: 18px; color: var(--ink); min-width: 0; max-width: 68ch; }
-.enquire { position: sticky; top: calc(100px + env(safe-area-inset-top, 0px)); display: grid; gap: 16px; padding: 32px; background: var(--forest); color: var(--on-dark); }
-.enquire h2 { font-size: 26px; text-transform: uppercase; color: var(--white); letter-spacing: .03em; }
-.enquire p { color: var(--on-dark-muted); font-size: 15.5px; }
-.enquire .btn-line { color: var(--white); border-color: rgba(255, 255, 255, .6); }
-.enquire .btn-line:hover { background: var(--white); color: var(--forest-2); }
-.enquire-phone a { color: var(--gold-soft); }
-.other-services { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
-.other-services a { display: inline-block; padding: 10px 18px; border: 1px solid var(--line); background: var(--white); border-radius: 40px; text-decoration: none; font-weight: 600; font-size: 15px; color: var(--forest); }
-.other-services a:hover { border-color: var(--forest); }
 
 .contact .info .section-head { margin-bottom: 0; }
 .areas-block { display: grid; gap: 12px; }
@@ -290,7 +286,6 @@ dialog.lightbox button { grid-row: 1 / span 2; grid-column: 2; width: 44px; heig
   .services-grid, .gallery { grid-template-columns: repeat(2, 1fr); }
   .intro .wrap, .profile .wrap, .contact .wrap, .care, .service-detail, .split-section .wrap, .split-section.reverse .wrap { grid-template-columns: 1fr; }
   .split-section.reverse .copy { order: 0; }
-  .enquire { position: static; }
   .split-img { aspect-ratio: 4 / 3; }
   .steps { grid-template-columns: 1fr; gap: 26px; }
   .steps::before { top: 28px; bottom: 28px; left: 27px; right: auto; width: 1px; height: auto; background: linear-gradient(180deg, var(--gold), var(--forest)); }
@@ -299,7 +294,12 @@ dialog.lightbox button { grid-row: 1 / span 2; grid-column: 2; width: 44px; heig
   .step h3 { align-self: end; }
   .section-head.split { grid-template-columns: 1fr; }
 }
+@media (max-width: 700px) {
+  .svc-modal-body { grid-template-columns: 1fr; }
+  .svc-modal-img { min-height: 0; max-height: 240px; }
+}
 @media (max-width: 640px) {
+  :root { --header-h: 68px; }
   body { font-size: 16px; }
   .topbar-areas { display: none; }
   .header .wrap { min-height: 66px; }

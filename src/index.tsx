@@ -8,16 +8,7 @@ import { MEDIA_ID } from './lib/media.ts';
 import { clientIp, verifyTurnstile } from './lib/util.ts';
 import { sendEnquiryAlert } from './lib/alerts.ts';
 import type { Site } from './views/site/parts.tsx';
-import {
-  AboutPage,
-  ContactPage,
-  HomePage,
-  NotFoundPage,
-  ProjectsPage,
-  ServicePage,
-  ServicesPage,
-  type EnquiryValues,
-} from './views/site/pages.tsx';
+import { EMPTY_ENQUIRY, HomePage, NotFoundPage, type EnquiryValues } from './views/site/pages.tsx';
 
 const app = new Hono<AppEnv>();
 
@@ -84,28 +75,26 @@ async function html(c: Ctx, el: unknown, status: 200 | 400 | 404 = 200) {
   return res;
 }
 
-app.get('/', async (c) => html(c, <HomePage site={await site(c)} />));
-app.get('/about', async (c) => html(c, <AboutPage site={await site(c)} />));
-app.get('/services', async (c) => html(c, <ServicesPage site={await site(c)} />));
-app.get('/services/:slug', async (c) => {
-  const s = await site(c);
-  const service = s.docs.services.items.find((x) => x.visible && x.slug === c.req.param('slug'));
-  if (!service) return html(c, <NotFoundPage site={s} />, 404);
-  return html(c, <ServicePage site={s} service={service} />);
-});
-app.get('/projects', async (c) => html(c, <ProjectsPage site={await site(c)} category={c.req.query('category') ?? ''} />));
-
-const EMPTY_ENQUIRY: EnquiryValues = { name: '', phone: '', email: '', city: '', project_type: '', message: '' };
-
-app.get('/contact', async (c) =>
-  html(c, <ContactPage site={await site(c)} sent={c.req.query('sent') === '1'} errors={[]} values={EMPTY_ENQUIRY} />),
+app.get('/', async (c) =>
+  html(c, <HomePage site={await site(c)} category={c.req.query('category') ?? ''} contact={{ sent: c.req.query('sent') === '1', errors: [], values: EMPTY_ENQUIRY }} />),
 );
+
+// The site used to have separate pages; their addresses now lead to the matching section.
+const moved = (target: string) => (c: Ctx) => c.redirect(target, 301);
+app.get('/about', moved('/#about'));
+app.get('/services', moved('/#services'));
+app.get('/services/:slug', moved('/#services'));
+app.get('/projects', (c) => {
+  const cat = c.req.query('category');
+  return c.redirect(cat && /^[a-z]+$/.test(cat) ? `/?category=${cat}#projects` : '/#projects', 301);
+});
+app.get('/contact', (c) => c.redirect(c.req.query('sent') === '1' ? '/?sent=1#contact' : '/#contact', 301));
 
 app.post('/contact', async (c) => {
   const form = await c.req.formData();
   const get = (k: string, max: number) => String(form.get(k) ?? '').trim().slice(0, max);
   // Bots fill in the hidden "website" field; pretend it worked.
-  if (get('website', 200)) return c.redirect('/contact?sent=1#enquiry', 303);
+  if (get('website', 200)) return c.redirect('/?sent=1#contact', 303);
 
   const s = await site(c);
   const values: EnquiryValues = {
@@ -125,7 +114,7 @@ app.post('/contact', async (c) => {
     const ok = await verifyTurnstile(c.env.TURNSTILE_SECRET!, String(form.get('cf-turnstile-response') ?? ''), clientIp(c.req.raw.headers));
     if (!ok) errors.push('The security check failed. Please try again.');
   }
-  if (errors.length) return html(c, <ContactPage site={s} sent={false} errors={errors} values={values} />, 400);
+  if (errors.length) return html(c, <HomePage site={s} category="" contact={{ sent: false, errors, values }} />, 400);
 
   const row = await c.env.DB.prepare(
     'INSERT INTO enquiries (name, phone, email, city, project_type, message) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
@@ -134,7 +123,7 @@ app.post('/contact', async (c) => {
     .first<{ id: number }>();
   // Email the alert in the background so the visitor isn't kept waiting on the mail server.
   void sendEnquiryAlert(c.env, s.docs, { id: row!.id, ...values }, s.origin).catch((e) => console.error(e));
-  return c.redirect('/contact?sent=1#enquiry', 303);
+  return c.redirect('/?sent=1#contact', 303);
 });
 
 // ---- Search engines ----
@@ -144,13 +133,9 @@ app.get('/robots.txt', (c) => {
   return c.text(`User-agent: *\nDisallow: /admin\n\nSitemap: ${origin}/sitemap.xml\n`);
 });
 
-app.get('/sitemap.xml', async (c) => {
-  const s = await site(c);
-  const paths = ['/', '/about', '/services', '/projects', '/contact', ...s.docs.services.items.filter((x) => x.visible).map((x) => `/services/${x.slug}`)];
-  const xml =
-    '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-    paths.map((p) => `  <url><loc>${s.origin}${p}</loc></url>`).join('\n') +
-    '\n</urlset>\n';
+app.get('/sitemap.xml', (c) => {
+  const origin = new URL(c.req.url).origin;
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${origin}/</loc></url>\n</urlset>\n`;
   return c.body(xml, 200, { 'Content-Type': 'application/xml; charset=utf-8' });
 });
 

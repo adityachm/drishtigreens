@@ -116,12 +116,26 @@ describe('config and proxy', () => {
 describe('app', () => {
   let cookie = '';
 
-  it('serves public pages and the health check', async () => {
-    for (const p of ['/', '/about', '/services', '/services/tree-relocation', '/projects', '/contact', '/sitemap.xml']) {
-      expect((await call(p)).status, p).toBe(200);
-    }
-    expect((await call('/services/does-not-exist')).status).toBe(404);
+  it('serves the page and the health check', async () => {
+    for (const p of ['/', '/sitemap.xml', '/robots.txt']) expect((await call(p)).status, p).toBe(200);
+    expect((await call('/no-such-page')).status).toBe(404);
     expect(await (await call('/healthz')).text()).toBe('ok');
+  });
+
+  it('sends the old page addresses to their sections', async () => {
+    const moved: [string, string][] = [
+      ['/about', '/#about'],
+      ['/services', '/#services'],
+      ['/services/tree-relocation', '/#services'],
+      ['/projects', '/#projects'],
+      ['/projects?category=trees', '/?category=trees#projects'],
+      ['/contact', '/#contact'],
+    ];
+    for (const [from, to] of moved) {
+      const r = await call(from);
+      expect(r.status, from).toBe(301);
+      expect(r.headers.get('location'), from).toBe(to);
+    }
   });
 
   it('says when no admin password has been set', async () => {
@@ -163,6 +177,7 @@ describe('app', () => {
   it('saves contact enquiries and shows them in the admin inbox', async () => {
     const r = await call('/contact', { method: 'POST', body: form({ name: 'Asha', phone: '98450 12345', message: 'Lawn redesign' }) });
     expect(r.status).toBe(303);
+    expect(r.headers.get('location')).toBe('/?sent=1#contact');
     expect(await (await call('/admin/enquiries', { headers: { cookie } })).text()).toContain('Asha');
   });
 
@@ -215,6 +230,15 @@ describe('app', () => {
     expect(img.status).toBe(200);
     expect(img.headers.get('cache-control')).toContain('immutable');
     expect((await call(m.thumb, { headers: { 'if-none-match': img.headers.get('etag')! } })).status).toBe(304);
+  });
+
+  it('shows form mistakes on the page, at the form, keeping what was typed', async () => {
+    const r = await call('/contact', { method: 'POST', body: form({ name: '', phone: '12', city: 'Mysuru' }) });
+    expect(r.status).toBe(400);
+    const html = await r.text();
+    expect(html).toContain('Please enter your name.');
+    expect(html).toContain('value="Mysuru"');
+    expect(html).toContain('id="home"');
   });
 
   it('ends the session on sign-out', async () => {

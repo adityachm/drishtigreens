@@ -1,4 +1,5 @@
-// Header, mobile menu, hero slider, project filters and lightbox. Every page works without this file.
+// Header, section highlighting in the menu, hero slider, service details, project filters and lightbox.
+// The page still works without this file: links scroll to sections and the form posts normally.
 (function () {
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -17,6 +18,56 @@
     nav.addEventListener('click', function (e) {
       if (e.target.tagName === 'A') { nav.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false'); }
     });
+  }
+
+  // Menu: highlight the section currently in view
+  var navLinks = {};
+  Array.prototype.forEach.call(document.querySelectorAll('#nav a[data-section]'), function (a) { navLinks[a.getAttribute('data-section')] = a; });
+  var spied = Object.keys(navLinks).map(function (id) { return document.getElementById(id); }).filter(Boolean);
+  if (spied.length && 'IntersectionObserver' in window) {
+    var setActive = function (id) {
+      Object.keys(navLinks).forEach(function (k) {
+        navLinks[k].classList.toggle('active', k === id);
+        if (k === id) navLinks[k].setAttribute('aria-current', 'true'); else navLinks[k].removeAttribute('aria-current');
+      });
+    };
+    // A section counts as current when it crosses the middle of the screen.
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) setActive(e.target.id); });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    spied.forEach(function (el) { io.observe(el); });
+  }
+
+  // Services: "Learn more" opens the full description
+  var svcModal = document.querySelector('dialog.svc-modal');
+  if (svcModal) {
+    var svcBody = svcModal.querySelector('.svc-modal-body');
+    var lastOpener = null;
+    document.addEventListener('click', function (e) {
+      var opener = e.target.closest('[data-service]');
+      if (opener) {
+        var tpl = document.querySelector('template[data-service-body="' + opener.getAttribute('data-service') + '"]');
+        if (!tpl) return;
+        svcBody.textContent = '';
+        svcBody.appendChild(tpl.content.cloneNode(true));
+        lastOpener = opener;
+        if (svcModal.showModal) svcModal.showModal(); else svcModal.setAttribute('open', '');
+        return;
+      }
+      var closer = e.target.closest('[data-close-service]');
+      if (closer && svcModal.contains(closer)) {
+        svcModal.close ? svcModal.close() : svcModal.removeAttribute('open');
+        // "See related projects" switches the gallery to that category before scrolling to it.
+        var cat = closer.getAttribute('data-show-category');
+        if (cat) {
+          var chip = document.querySelector('#projects .chip[data-cat="' + cat + '"]');
+          if (chip) chip.click();
+        }
+      }
+    });
+    svcModal.querySelector('.svc-modal-close').addEventListener('click', function () { svcModal.close ? svcModal.close() : svcModal.removeAttribute('open'); });
+    svcModal.addEventListener('click', function (e) { if (e.target === svcModal && svcModal.close) svcModal.close(); });
+    svcModal.addEventListener('close', function () { if (lastOpener && document.activeElement === document.body) lastOpener.focus({ preventScroll: true }); });
   }
 
   // Hero slider

@@ -19,6 +19,7 @@ export const WHY_ICONS: Option[] = [
 ];
 
 // ---- Document types (what views read) ----
+// The site is one page. Each document is one section of it, edited on its own admin screen.
 
 export type HeroSlide = {
   eyebrow: string;
@@ -32,8 +33,6 @@ export type HeroSlide = {
 };
 export type TitleText = { title: string; text: string };
 export type WhyItem = TitleText & { icon: string };
-export type Seo = { seo_title: string; seo_description: string };
-export type Banner = { banner_image: string; banner_title: string; banner_text: string };
 
 export type Settings = {
   phone: string;
@@ -41,19 +40,24 @@ export type Settings = {
   email: string;
   address: string;
   consult_line: string;
-  service_areas: string[];
   notify_emails: string[];
+  service_areas: string[];
   logo: string;
   tagline: string;
   footer_blurb: string;
   footer_line: string;
 };
 
-export type Home = Seo & {
+/** Top of the page: slider and introduction, plus the page's title for search engines. */
+export type Home = {
+  seo_title: string;
+  seo_description: string;
   hero: HeroSlide[];
   intro_statement: string;
   intro_body: string;
-  services_heading: string;
+};
+
+export type About = {
   about_heading: string;
   about_body: string;
   about_quote: string;
@@ -61,41 +65,24 @@ export type Home = Seo & {
   about_image_inset: string;
   stat_value: string;
   stat_label: string;
+  philosophy_heading: string;
+  philosophy_body: string;
+  philosophy_image: string;
   why_heading: string;
   why_items: WhyItem[];
   care_title: string;
   care_text: string;
-  projects_heading: string;
-  approach_heading: string;
-  approach_steps: TitleText[];
-  cta_eyebrow: string;
-  cta_heading: string;
-  cta_text: string;
-  cta_image: string;
 };
-
-export type About = Seo &
-  Banner & {
-    story_heading: string;
-    story_body: string;
-    story_image: string;
-    philosophy_heading: string;
-    philosophy_body: string;
-    philosophy_image: string;
-    closing_line: string;
-    closing_sub: string;
-  };
 
 export type Service = {
   title: string;
-  slug: string;
   summary: string;
   body: string;
   image: string;
   category: string;
   visible: boolean;
 };
-export type Services = Seo & Banner & { heading: string; items: Service[] };
+export type Services = { heading: string; items: Service[] };
 
 export type Project = {
   title: string;
@@ -105,15 +92,20 @@ export type Project = {
   featured: boolean;
   visible: boolean;
 };
-export type Projects = Seo & Banner & { heading: string; items: Project[] };
+export type Projects = { heading: string; items: Project[] };
 
-export type Contact = Seo &
-  Banner & {
-    heading: string;
-    intro: string;
-    project_types: string[];
-    success_message: string;
-  };
+export type Approach = { heading: string; steps: TitleText[] };
+
+export type Contact = {
+  cta_eyebrow: string;
+  cta_heading: string;
+  cta_text: string;
+  cta_image: string;
+  heading: string;
+  intro: string;
+  project_types: string[];
+  success_message: string;
+};
 
 export type Docs = {
   settings: Settings;
@@ -121,29 +113,12 @@ export type Docs = {
   about: About;
   services: Services;
   projects: Projects;
+  approach: Approach;
   contact: Contact;
 };
 export type DocKey = keyof Docs;
 
-// ---- Editor definitions ----
-
-const seo = (page: string): Section => ({
-  title: 'Search engines',
-  help: `How the ${page} appears in Google results and link previews.`,
-  fields: [
-    { type: 'text', key: 'seo_title', label: 'Page title', max: 70, required: true },
-    { type: 'textarea', key: 'seo_description', label: 'Description', max: 170, rows: 3 },
-  ],
-});
-
-const banner: Section = {
-  title: 'Page banner',
-  fields: [
-    { type: 'image', key: 'banner_image', label: 'Banner image' },
-    { type: 'text', key: 'banner_title', label: 'Banner title', required: true },
-    { type: 'textarea', key: 'banner_text', label: 'Banner text', rows: 2, max: 300 },
-  ],
-};
+// ---- Editor definitions, in the order the sections appear on the page ----
 
 const paraHelp = 'Leave a blank line between paragraphs.';
 
@@ -152,13 +127,13 @@ export type DocDef = { key: DocKey; title: string; description: string; publicPa
 export const DOCS: DocDef[] = [
   {
     key: 'home',
-    title: 'Home page',
-    description: 'Hero slider, introduction and the sections that appear on the home page.',
-    publicPath: '/',
+    title: 'Top of page',
+    description: 'The photo slider and introduction at the top of the website, and how it appears in Google.',
+    publicPath: '/#home',
     sections: [
       {
-        title: 'Hero slider',
-        help: 'Large photos at the top of the home page. Use wide landscape photos; text sits on the left.',
+        title: 'Photo slider',
+        help: 'Large photos at the top of the page. Use wide landscape photos; text sits on the left.',
         fields: [
           {
             type: 'list',
@@ -174,9 +149,9 @@ export const DOCS: DocDef[] = [
               { type: 'text', key: 'title', label: 'Title', required: true, max: 80 },
               { type: 'textarea', key: 'text', label: 'Text', rows: 2, max: 240 },
               { type: 'text', key: 'primary_label', label: 'Main button label', max: 40 },
-              { type: 'link', key: 'primary_link', label: 'Main button link', placeholder: '/contact' },
+              { type: 'link', key: 'primary_link', label: 'Main button goes to', placeholder: '/#contact', help: 'A section: /#about, /#services, /#projects, /#approach or /#contact.' },
               { type: 'text', key: 'secondary_label', label: 'Second button label', max: 40 },
-              { type: 'link', key: 'secondary_link', label: 'Second button link', placeholder: '/projects' },
+              { type: 'link', key: 'secondary_link', label: 'Second button goes to', placeholder: '/#projects' },
             ],
           },
         ],
@@ -189,20 +164,39 @@ export const DOCS: DocDef[] = [
         ],
       },
       {
-        title: 'Services section',
-        help: 'The service cards come from the Services editor.',
-        fields: [{ type: 'text', key: 'services_heading', label: 'Heading' }],
+        title: 'Search engines',
+        help: 'How the website appears in Google results and link previews.',
+        fields: [
+          { type: 'text', key: 'seo_title', label: 'Page title', max: 70, required: true },
+          { type: 'textarea', key: 'seo_description', label: 'Description', max: 170, rows: 3 },
+        ],
       },
+    ],
+  },
+  {
+    key: 'about',
+    title: 'About',
+    description: 'Company story, philosophy and “Why choose us”.',
+    publicPath: '/#about',
+    sections: [
       {
-        title: 'Profile',
+        title: 'Our story',
         fields: [
           { type: 'text', key: 'about_heading', label: 'Heading' },
-          { type: 'textarea', key: 'about_body', label: 'Text', rows: 6, help: paraHelp },
+          { type: 'textarea', key: 'about_body', label: 'Text', rows: 10, help: paraHelp },
           { type: 'text', key: 'about_quote', label: 'Quote' },
           { type: 'image', key: 'about_image_main', label: 'Main photo (portrait works best)' },
           { type: 'image', key: 'about_image_inset', label: 'Small overlapping photo' },
           { type: 'text', key: 'stat_value', label: 'Highlight number', max: 10, help: 'For example 10+. Leave empty to hide.' },
           { type: 'text', key: 'stat_label', label: 'Highlight label', max: 40 },
+        ],
+      },
+      {
+        title: 'Philosophy',
+        fields: [
+          { type: 'text', key: 'philosophy_heading', label: 'Heading' },
+          { type: 'textarea', key: 'philosophy_body', label: 'Text', rows: 10, help: paraHelp },
+          { type: 'image', key: 'philosophy_image', label: 'Photo' },
         ],
       },
       {
@@ -226,87 +220,18 @@ export const DOCS: DocDef[] = [
           { type: 'textarea', key: 'care_text', label: 'Aftercare box text', rows: 4 },
         ],
       },
-      {
-        title: 'Projects section',
-        help: 'Projects marked "Featured" in the Projects editor show here.',
-        fields: [{ type: 'text', key: 'projects_heading', label: 'Heading' }],
-      },
-      {
-        title: 'Our approach',
-        help: 'Shown on the home and About pages, numbered in this order.',
-        fields: [
-          { type: 'text', key: 'approach_heading', label: 'Heading' },
-          {
-            type: 'list',
-            key: 'approach_steps',
-            label: 'Steps',
-            itemLabel: 'Step',
-            titleKey: 'title',
-            max: 8,
-            fields: [
-              { type: 'text', key: 'title', label: 'Title', required: true, max: 40 },
-              { type: 'textarea', key: 'text', label: 'Text', rows: 2, max: 300 },
-            ],
-          },
-        ],
-      },
-      {
-        title: 'Call to action band',
-        help: 'Shown near the bottom of most pages.',
-        fields: [
-          { type: 'text', key: 'cta_eyebrow', label: 'Small label' },
-          { type: 'text', key: 'cta_heading', label: 'Heading' },
-          { type: 'textarea', key: 'cta_text', label: 'Text', rows: 3 },
-          { type: 'image', key: 'cta_image', label: 'Background photo' },
-        ],
-      },
-      seo('home page'),
-    ],
-  },
-  {
-    key: 'about',
-    title: 'About page',
-    description: 'Company story and philosophy. "Why choose us" and "Our approach" come from the Home page editor.',
-    publicPath: '/about',
-    sections: [
-      banner,
-      {
-        title: 'Our story',
-        fields: [
-          { type: 'text', key: 'story_heading', label: 'Heading' },
-          { type: 'textarea', key: 'story_body', label: 'Text', rows: 10, help: paraHelp },
-          { type: 'image', key: 'story_image', label: 'Photo' },
-        ],
-      },
-      {
-        title: 'Philosophy',
-        fields: [
-          { type: 'text', key: 'philosophy_heading', label: 'Heading' },
-          { type: 'textarea', key: 'philosophy_body', label: 'Text', rows: 10, help: paraHelp },
-          { type: 'image', key: 'philosophy_image', label: 'Photo' },
-        ],
-      },
-      {
-        title: 'Closing line',
-        fields: [
-          { type: 'text', key: 'closing_line', label: 'Line' },
-          { type: 'text', key: 'closing_sub', label: 'Smaller line below' },
-        ],
-      },
-      seo('About page'),
     ],
   },
   {
     key: 'services',
     title: 'Services',
-    description: 'The service cards on the home and Services pages, and each service’s own page.',
-    publicPath: '/services',
+    description: 'The service cards. “Learn more” on a card opens its full description.',
+    publicPath: '/#services',
     sections: [
-      banner,
       { title: 'Heading', fields: [{ type: 'text', key: 'heading', label: 'Heading above the cards' }] },
       {
         title: 'Services',
-        help: 'The first 9 visible services appear on the home page. Untick "Show on website" to hide one without deleting it.',
+        help: 'Untick "Show on website" to hide a service without deleting it.',
         fields: [
           {
             type: 'list',
@@ -318,30 +243,27 @@ export const DOCS: DocDef[] = [
             fields: [
               { type: 'checkbox', key: 'visible', label: 'Show on website' },
               { type: 'text', key: 'title', label: 'Name', required: true, max: 80 },
-              { type: 'slug', key: 'slug', label: 'Web address', help: 'The page will be at /services/<this>. Changing it breaks old links.' },
               { type: 'image', key: 'image', label: 'Photo' },
               { type: 'textarea', key: 'summary', label: 'Short description (card)', rows: 3, max: 300 },
-              { type: 'textarea', key: 'body', label: 'Full description (service page)', rows: 8, help: paraHelp },
+              { type: 'textarea', key: 'body', label: 'Full description (opens from “Learn more”)', rows: 8, help: paraHelp },
               {
                 type: 'select',
                 key: 'category',
-                label: 'Show projects from',
-                options: [{ value: '', label: 'No related projects' }, ...PROJECT_CATEGORIES],
+                label: '“See related projects” shows',
+                options: [{ value: '', label: 'No related projects button' }, ...PROJECT_CATEGORIES],
               },
             ],
           },
         ],
       },
-      seo('Services page'),
     ],
   },
   {
     key: 'projects',
     title: 'Projects',
-    description: 'The project gallery, grouped by category. Featured projects also appear on the home page.',
-    publicPath: '/projects',
+    description: 'The project gallery, grouped by category. Featured projects show first.',
+    publicPath: '/#projects',
     sections: [
-      banner,
       { title: 'Heading', fields: [{ type: 'text', key: 'heading', label: 'Heading above the gallery' }] },
       {
         title: 'Projects',
@@ -355,7 +277,7 @@ export const DOCS: DocDef[] = [
             max: 200,
             fields: [
               { type: 'checkbox', key: 'visible', label: 'Show on website' },
-              { type: 'checkbox', key: 'featured', label: 'Feature on the home page' },
+              { type: 'checkbox', key: 'featured', label: 'Featured (shown first)' },
               { type: 'image', key: 'image', label: 'Photo', required: true },
               { type: 'select', key: 'category', label: 'Category', options: PROJECT_CATEGORIES },
               { type: 'text', key: 'title', label: 'Title', required: true, max: 80 },
@@ -364,16 +286,50 @@ export const DOCS: DocDef[] = [
           },
         ],
       },
-      seo('Projects page'),
+    ],
+  },
+  {
+    key: 'approach',
+    title: 'Our approach',
+    description: 'The numbered steps of how a project runs.',
+    publicPath: '/#approach',
+    sections: [
+      {
+        title: 'Our approach',
+        help: 'Shown numbered, in this order.',
+        fields: [
+          { type: 'text', key: 'heading', label: 'Heading' },
+          {
+            type: 'list',
+            key: 'steps',
+            label: 'Steps',
+            itemLabel: 'Step',
+            titleKey: 'title',
+            max: 8,
+            fields: [
+              { type: 'text', key: 'title', label: 'Title', required: true, max: 40 },
+              { type: 'textarea', key: 'text', label: 'Text', rows: 2, max: 300 },
+            ],
+          },
+        ],
+      },
     ],
   },
   {
     key: 'contact',
-    title: 'Contact page',
-    description: 'Enquiry form text. Phone, email and address are under Site settings.',
-    publicPath: '/contact',
+    title: 'Contact',
+    description: 'The photo band and enquiry form at the bottom of the page. Phone, email and address are under Site settings.',
+    publicPath: '/#contact',
     sections: [
-      banner,
+      {
+        title: 'Photo band above the form',
+        fields: [
+          { type: 'text', key: 'cta_eyebrow', label: 'Small label' },
+          { type: 'text', key: 'cta_heading', label: 'Heading' },
+          { type: 'textarea', key: 'cta_text', label: 'Text', rows: 3 },
+          { type: 'image', key: 'cta_image', label: 'Background photo' },
+        ],
+      },
       {
         title: 'Enquiry form',
         fields: [
@@ -383,14 +339,13 @@ export const DOCS: DocDef[] = [
           { type: 'textarea', key: 'success_message', label: 'Message after sending', rows: 2 },
         ],
       },
-      seo('Contact page'),
     ],
   },
   {
     key: 'settings',
     title: 'Site settings',
     description: 'Contact details, service areas and footer text used across the whole site.',
-    publicPath: '/contact',
+    publicPath: '/#contact',
     sections: [
       {
         title: 'Contact details',
