@@ -1,0 +1,436 @@
+import type { Child } from 'hono/jsx';
+import { raw } from 'hono/html';
+import type { Docs, Project } from '../../content/schema.ts';
+import { PROJECT_CATEGORIES } from '../../content/schema.ts';
+import { srcset, urlAtLeast, type MediaMap } from '../../lib/media.ts';
+import { paragraphs, safeHref, telHref, whatsappHref } from '../../lib/util.ts';
+
+export type Site = {
+  docs: Docs;
+  media: MediaMap;
+  /** Cache-busting version for /static files. */
+  v: string;
+  path: string;
+  origin: string;
+  turnstileKey: string;
+};
+
+export type PageMeta = { title: string; description: string; image?: string };
+
+const NAV: [string, string][] = [
+  ['/', 'Home'],
+  ['/about', 'About'],
+  ['/services', 'Services'],
+  ['/projects', 'Projects'],
+  ['/about#approach', 'Approach'],
+  ['/contact', 'Contact'],
+];
+
+const CATEGORY_LABEL = Object.fromEntries(PROJECT_CATEGORIES.map((c) => [c.value, c.label]));
+
+export function categoryLabel(value: string): string {
+  return CATEGORY_LABEL[value] ?? value;
+}
+
+// ---- Small building blocks ----
+
+export function Img(props: {
+  site: Site;
+  id: string | undefined;
+  sizes: string;
+  alt?: string;
+  class?: string;
+  eager?: boolean;
+  style?: string;
+}) {
+  const m = props.id ? props.site.media.get(props.id) : undefined;
+  if (!m) return <div class={`img-missing ${props.class ?? ''}`} aria-hidden="true"></div>;
+  return (
+    <img
+      src={urlAtLeast(m, 960)}
+      srcset={srcset(m)}
+      sizes={props.sizes}
+      width={m.width}
+      height={m.height}
+      alt={props.alt ?? m.alt}
+      class={props.class}
+      style={props.style}
+      loading={props.eager ? 'eager' : 'lazy'}
+      fetchpriority={props.eager ? 'high' : undefined}
+      decoding="async"
+    />
+  );
+}
+
+export function Paras({ text, class: cls }: { text: string; class?: string }) {
+  return (
+    <>
+      {paragraphs(text).map((p) => (
+        <p class={cls}>{p}</p>
+      ))}
+    </>
+  );
+}
+
+function LogoMark({ light }: { light?: boolean }) {
+  const line = light ? '#E9EDE6' : '#1E3A2A';
+  const gold = light ? '#D9B76A' : '#B48A36';
+  return (
+    <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <path d="M3 20C9 9 31 9 37 20C31 31 9 31 3 20Z" stroke={line} stroke-width="2" />
+      <path d="M8 20H32" stroke={gold} stroke-width="1.5" />
+      <path d="M14 20L19 14.5M20 20L25 14.5M14 20L19 25.5M20 20L25 25.5" stroke={line} stroke-width="1.3" stroke-linecap="round" />
+      <circle cx="20" cy="20" r="2.6" fill={gold} />
+    </svg>
+  );
+}
+
+function Logo({ site, light, tagline }: { site: Site; light?: boolean; tagline: string }) {
+  const logo = site.docs.settings.logo ? site.media.get(site.docs.settings.logo) : undefined;
+  return (
+    <a class="logo" href="/" aria-label="Drishti Greens, home">
+      {logo && !light ? (
+        <img class="logo-img" src={urlAtLeast(logo, 480)} alt="Drishti Greens" width={logo.width} height={logo.height} />
+      ) : (
+        <>
+          <LogoMark light={light} />
+          <span class="logo-text">
+            <b>DRISHTI GREENS</b>
+            <small>{tagline}</small>
+          </span>
+        </>
+      )}
+    </a>
+  );
+}
+
+const ICONS: Record<string, string> = {
+  clock: '<circle cx="18" cy="18" r="14"/><path d="M18 9v9l6 4"/>',
+  compass: '<path d="M5 31L31 5M5 31h9M5 31v-9"/><path d="M14 6h16v16"/>',
+  leaf: '<path d="M18 32V14"/><path d="M18 20C18 12 12 7 5 7c0 8 5 13 13 13ZM18 16c0-7 5-11 13-11 0 7-5 11-13 11Z"/>',
+  calendar: '<rect x="5" y="7" width="26" height="24" rx="1"/><path d="M5 14h26M12 4v6M24 4v6M11 21l5 4 9-8"/>',
+  shield: '<path d="M18 4l12 5v9c0 7-5 12-12 14-7-2-12-7-12-14V9l12-5Z"/><path d="M12 18l4 4 8-8"/>',
+  drop: '<path d="M18 4c6 8 10 13 10 18a10 10 0 0 1-20 0c0-5 4-10 10-18Z"/>',
+};
+
+export function Icon({ name }: { name: string }) {
+  return (
+    <svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+      {raw(ICONS[name] ?? ICONS.leaf)}
+    </svg>
+  );
+}
+
+function Btn({ href, label, kind }: { href: string; label: string; kind: 'gold' | 'ghost' | 'line' }) {
+  if (!label) return null;
+  return (
+    <a class={`btn btn-${kind}`} href={safeHref(href)}>
+      {label}
+    </a>
+  );
+}
+export { Btn };
+
+// ---- Page chrome ----
+
+export function Layout({ site, meta, children, scripts }: { site: Site; meta: PageMeta; children: Child; scripts?: Child }) {
+  const s = site.docs.settings;
+  const tel = telHref(s.phone);
+  const wa = whatsappHref(s.whatsapp, 'Hello Drishti Greens, I would like to discuss a landscaping project.');
+  const ogImage = meta.image ? site.media.get(meta.image) : undefined;
+  const canonical = site.origin + site.path;
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'LandscapingBusiness',
+    name: 'Drishti Greens',
+    url: site.origin + '/',
+    slogan: s.tagline,
+    areaServed: s.service_areas,
+    ...(s.phone ? { telephone: s.phone } : {}),
+    ...(s.email ? { email: s.email } : {}),
+    ...(s.address ? { address: s.address } : {}),
+  };
+  const services = site.docs.services.items.filter((x) => x.visible).slice(0, 5);
+
+  return (
+    <html lang="en-IN">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{meta.title}</title>
+        <meta name="description" content={meta.description} />
+        <link rel="canonical" href={canonical} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Drishti Greens" />
+        <meta property="og:title" content={meta.title} />
+        <meta property="og:description" content={meta.description} />
+        <meta property="og:url" content={canonical} />
+        {ogImage && <meta property="og:image" content={site.origin + urlAtLeast(ogImage, 1200)} />}
+        <meta name="theme-color" content="#1E3A2A" />
+        <link rel="icon" href={`/static/favicon.svg?v=${site.v}`} type="image/svg+xml" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Marcellus&display=swap"
+        />
+        <link rel="stylesheet" href={`/static/site.css?v=${site.v}`} />
+        <script src={`/static/site.js?v=${site.v}`} defer></script>
+        {scripts}
+        <script type="application/ld+json">{raw(JSON.stringify(ld).replace(/</g, '\\u003c'))}</script>
+      </head>
+      <body>
+        <a class="skip" href="#main">
+          Skip to content
+        </a>
+        <div class="topbar">
+          <div class="wrap">
+            <span>
+              {s.phone ? (
+                <>
+                  {s.consult_line}{' '}
+                  <a href={tel}>
+                    <strong>{s.phone}</strong>
+                  </a>
+                </>
+              ) : (
+                s.tagline
+              )}
+            </span>
+            <span class="topbar-areas">{s.service_areas.slice(0, 5).join(' · ')}</span>
+          </div>
+        </div>
+        <header class="header" id="header">
+          <div class="wrap">
+            <Logo site={site} tagline={s.tagline} />
+            <nav class="nav" id="nav" aria-label="Main">
+              {NAV.map(([href, label]) => {
+                const active = href === '/' ? site.path === '/' : !href.includes('#') && site.path.startsWith(href);
+                return (
+                  <a href={href} class={active ? 'active' : undefined} aria-current={active ? 'page' : undefined}>
+                    {label}
+                  </a>
+                );
+              })}
+            </nav>
+            <a class="btn btn-gold header-cta" href="/contact">
+              Discuss your project
+            </a>
+            <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M3 6h18M3 12h18M3 18h18" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <main id="main">{children}</main>
+
+        <footer class="footer">
+          <div class="wrap cols">
+            <div class="about">
+              <Logo site={site} light tagline="Rooted in nature" />
+              <p>{s.footer_blurb}</p>
+            </div>
+            <div>
+              <h2 class="footer-h">Explore</h2>
+              <ul>
+                <li><a href="/about">About us</a></li>
+                <li><a href="/services">Services</a></li>
+                <li><a href="/projects">Projects</a></li>
+                <li><a href="/about#approach">Our approach</a></li>
+                <li><a href="/contact">Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <h2 class="footer-h">Services</h2>
+              <ul>
+                {services.map((x) => (
+                  <li><a href={`/services/${x.slug}`}>{x.title}</a></li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h2 class="footer-h">Get in touch</h2>
+              <ul>
+                {s.phone && <li><a href={tel}>{s.phone}</a></li>}
+                {wa && <li><a href={wa} rel="noopener">WhatsApp</a></li>}
+                {s.email && <li><a href={`mailto:${s.email}`}>{s.email}</a></li>}
+                {s.address && <li class="addr">{s.address}</li>}
+                <li><a href="/contact">Send an enquiry</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="wrap legal">
+            <span>© {new Date().getFullYear()} Drishti Greens. All rights reserved.</span>
+            <span>{s.footer_line}</span>
+          </div>
+        </footer>
+
+        {wa && (
+          <a class="wa" href={wa} rel="noopener" aria-label="Chat on WhatsApp">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.6a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.2-.2-.4-.3Z" />
+            </svg>
+          </a>
+        )}
+      </body>
+    </html>
+  );
+}
+
+// ---- Shared sections ----
+
+export function Banner({ site, image, title, text, crumb }: { site: Site; image: string; title: string; text?: string; crumb?: [string, string] }) {
+  return (
+    <section class="page-banner on-photo">
+      <Img site={site} id={image} sizes="100vw" alt="" eager />
+      <div class="wrap">
+        {crumb && (
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href="/">Home</a> / <a href={crumb[0]}>{crumb[1]}</a>
+          </nav>
+        )}
+        <h1 class="h1">{title}</h1>
+        {text && <p>{text}</p>}
+      </div>
+    </section>
+  );
+}
+
+export function WhyBand({ site }: { site: Site }) {
+  const h = site.docs.home;
+  return (
+    <section class="dark section">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Why choose Drishti Greens</span>
+          <h2 class="h2">{h.why_heading}</h2>
+        </div>
+        <div class="why-grid">
+          {h.why_items.map((w) => (
+            <div class="why-item">
+              <Icon name={w.icon} />
+              <h3>{w.title}</h3>
+              <p>{w.text}</p>
+            </div>
+          ))}
+        </div>
+        {h.care_title && (
+          <div class="care">
+            <h3>{h.care_title}</h3>
+            <div class="copy">
+              <Paras text={h.care_text} />
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function Approach({ site, white }: { site: Site; white?: boolean }) {
+  const h = site.docs.home;
+  return (
+    <section class={`section${white ? ' approach' : ''}`} id="approach">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Our approach</span>
+          <h2 class="h2">{h.approach_heading}</h2>
+        </div>
+        <ol class="steps">
+          {h.approach_steps.map((s) => (
+            <li class="step">
+              <span class="dot" aria-hidden="true"></span>
+              <h3>{s.title}</h3>
+              <p>{s.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+export function CtaBand({ site }: { site: Site }) {
+  const h = site.docs.home;
+  const wa = whatsappHref(site.docs.settings.whatsapp, 'Hello Drishti Greens, I would like to discuss a landscaping project.');
+  return (
+    <section class="cta on-photo">
+      <Img site={site} id={h.cta_image} sizes="100vw" alt="" />
+      <div class="wrap">
+        {h.cta_eyebrow && <span class="eyebrow">{h.cta_eyebrow}</span>}
+        <h2 class="h2">{h.cta_heading}</h2>
+        {h.cta_text && <p>{h.cta_text}</p>}
+        <div class="actions">
+          <a class="btn btn-gold" href="/contact">
+            Start a conversation
+          </a>
+          {wa && (
+            <a class="btn btn-ghost" href={wa} rel="noopener">
+              WhatsApp us
+            </a>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Project cards with category chips and a lightbox. `initial` is the category shown first:
+ *  'featured', 'all' or a category value. Hidden cards stay in the page so filtering is instant. */
+export function Gallery({ site, items, initial, chips }: { site: Site; items: Project[]; initial: string; chips: 'home' | 'all' | 'none' }) {
+  const present = PROJECT_CATEGORIES.filter((c) => items.some((p) => p.category === c.value));
+  const first: [string, string][] = chips === 'home' ? [['featured', 'Featured']] : [['all', 'All projects']];
+  const chipList = [...first, ...present.map((c): [string, string] => [c.value, c.label])];
+  const shows = (p: Project) =>
+    initial === 'all' || (initial === 'featured' ? p.featured : p.category === initial);
+  return (
+    <div class="gallery-wrap" data-gallery>
+      {chips !== 'none' && (
+        <div class="chips" role="group" aria-label="Filter projects by category">
+          {chipList.map(([value, label]) => (
+            <button class="chip" type="button" data-cat={value} aria-pressed={value === initial ? 'true' : 'false'}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      <div class="gallery">
+        {items.map((p) => {
+          const m = site.media.get(p.image);
+          return (
+            <article class="proj" data-cat={p.category} data-featured={p.featured ? '1' : '0'} hidden={!shows(p)}>
+              <button
+                type="button"
+                class="proj-open"
+                aria-label={`Enlarge: ${p.title}`}
+                data-full={m ? urlAtLeast(m, 1600) : ''}
+                data-title={p.title}
+                data-caption={p.caption}
+                data-alt={m?.alt ?? p.title}
+              >
+                <Img site={site} id={p.image} sizes="(max-width: 640px) 100vw, (max-width: 960px) 50vw, 400px" />
+              </button>
+              <div class="meta">
+                <span class="cat">{categoryLabel(p.category)}</span>
+                <h3>{p.title}</h3>
+                {p.caption && <p>{p.caption}</p>}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <dialog class="lightbox" aria-label="Project photo">
+        <img src="" alt="" />
+        <div class="cap">
+          <h3></h3>
+          <p></p>
+          <button type="button" class="lb-close" aria-label="Close">
+            ×
+          </button>
+        </div>
+      </dialog>
+    </div>
+  );
+}

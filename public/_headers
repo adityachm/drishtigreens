@@ -1,0 +1,5 @@
+# Pages link to /static files with ?v=<deployment id>, so each release gets new URLs
+# and long browser caching is safe.
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
