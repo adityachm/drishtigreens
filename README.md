@@ -92,7 +92,7 @@ Merging a pull request with GitHub's button creates a commit signed by GitHub, n
 | `~/drishtigreens/` | This repository on `main`. Only ever moved to a verified commit |
 | `~/drishtigreens-data/` | `drishtigreens.sqlite` and `media/`. Deploys never touch it |
 | `~/drishtigreens-backups/` | Database copies (14 days) and a copy of every photo |
-| `~/drishtigreens-secrets/` | `allowed_signers` (who may deploy) and `.env` (Turnstile keys) |
+| `~/drishtigreens-secrets/` | `allowed_signers` (who may deploy) and `.env` (email and Turnstile settings) |
 
 Crontab:
 
@@ -109,6 +109,23 @@ Useful commands on the server: `deploy/set-password.sh`, `deploy/restart.sh` (af
 
 - `drishtigreens.com` → `HTTP` → `192.168.1.40:8790`
 - `www.drishtigreens.com` → `HTTP` → `192.168.1.40:8790` (the app redirects `www` to the bare domain)
+
+### Email alerts for new enquiries
+
+Each enquiry is saved first and then emailed in the background, so a mail problem never loses one. The email goes to the addresses in **Admin → Site settings → Enquiry alerts**, or to the business email if that list is empty. Its Reply-To is the person who sent the enquiry, so replying answers them. If an email fails, the enquiry is tagged "Email alert failed" in the inbox. More than 20 enquiries in an hour stops the emails (the enquiries are still saved), so a spam run can't flood the mailbox.
+
+Sending uses any SMTP account. The settings go in `~/drishtigreens-secrets/.env` on the server; then run `deploy/restart.sh`. For a Gmail account (it needs 2-step verification and an [app password](https://myaccount.google.com/apppasswords)):
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=you@gmail.com
+SMTP_PASS=the 16-letter app password
+# Optional: SMTP_FROM (defaults to SMTP_USER), SMTP_FROM_NAME (defaults to "Drishti Greens Website"),
+# SMTP_SECURITY=tls (port 465, the default) or starttls (port 587)
+```
+
+Then use **Send a test email** on the admin dashboard. The dashboard also shows whether alerts are on and where they go.
 
 ### Turnstile (recommended, stops spam enquiries)
 

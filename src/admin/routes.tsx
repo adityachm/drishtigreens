@@ -35,6 +35,7 @@ import type { Db } from '../platform/db.ts';
 import { AdminLayout, LoginPage, type Flash } from '../views/admin/layout.tsx';
 import { Editor } from '../views/admin/editor.tsx';
 import { AccountPage, Dashboard, EnquiriesPage, MediaPage, type Enquiry } from '../views/admin/pages.tsx';
+import { alertRecipients } from '../lib/alerts.ts';
 
 const admin = new Hono<AppEnv>();
 
@@ -43,6 +44,7 @@ const FLASH: Record<string, string> = {
   alt: 'Photo description saved.',
   deleted: 'Deleted.',
   password: 'Password changed. Other devices have been signed out.',
+  'test-email': 'Test email sent. Check the inbox (and the spam folder the first time).',
 };
 
 admin.use('*', async (c, next) => {
@@ -139,7 +141,26 @@ admin.get('/', async (c) => {
     c.env.DB.prepare("SELECT COUNT(*) AS n FROM enquiries WHERE status = 'new'"),
   ]);
   const n = (count.results[0] as { n: number }).n;
-  return page(c, 'Dashboard', '/admin', <Dashboard recent={recent.results as Enquiry[]} newCount={n} />);
+  const docs = await loadDocs(c.env.DB);
+  const mail = { configured: c.env.MAILER !== null, from: c.env.MAILER?.from ?? '', to: alertRecipients(docs) };
+  return page(c, 'Dashboard', '/admin', <Dashboard recent={recent.results as Enquiry[]} newCount={n} mail={mail} />);
+});
+
+admin.post('/test-email', async (c) => {
+  const to = alertRecipients(await loadDocs(c.env.DB));
+  const fail = (text: string) => page(c, 'Dashboard', '/admin', <p class="card">{text}</p>, { kind: 'error', text: 'Test email not sent.' }, 400);
+  if (!c.env.MAILER) return fail('Sending isn’t set up on the server (no SMTP settings).');
+  if (!to.length) return fail('There is no address to send to. Add one in Site settings → Enquiry alerts.');
+  try {
+    await c.env.MAILER.send({
+      to,
+      subject: 'Test: Drishti Greens enquiry alerts',
+      text: `This is a test from the Drishti Greens admin panel.\n\nNew enquiries from the website will be emailed to: ${to.join(', ')}.`,
+    });
+  } catch (e) {
+    return fail(`The mail server said: ${(e as Error).message}`);
+  }
+  return c.redirect('/admin?ok=test-email', 303);
 });
 
 // ---- Content editors ----

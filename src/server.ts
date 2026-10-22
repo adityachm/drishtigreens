@@ -11,6 +11,7 @@ import { loadConfig } from './platform/config.ts';
 import { migrate, openDb } from './platform/db.ts';
 import { FileStorage } from './platform/storage.ts';
 import { withForwardedProto } from './platform/http.ts';
+import { mailerFromEnv } from './platform/smtp.ts';
 
 const cfg = loadConfig();
 const { db, raw } = openDb(join(cfg.dataDir, 'drishtigreens.sqlite'));
@@ -23,7 +24,9 @@ const env: Bindings = {
   VERSION: cfg.version,
   TURNSTILE_SITE_KEY: cfg.turnstileSiteKey,
   TURNSTILE_SECRET: cfg.turnstileSecret,
+  MAILER: mailerFromEnv(cfg.get),
 };
+console.log(env.MAILER ? `Enquiry alerts send from ${env.MAILER.from}` : 'Enquiry alerts off (no SMTP_HOST)');
 
 const root = new Hono<{ Bindings: Bindings }>();
 // Pages link to /static files with ?v=<release>, so each release gets new URLs and long caching is safe.

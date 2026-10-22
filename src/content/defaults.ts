@@ -11,6 +11,7 @@ export const DEFAULTS: Docs = {
     email: '',
     address: '',
     consult_line: 'For site consultation, call',
+    notify_emails: [],
     service_areas: ['Bengaluru', 'Karnataka', 'Hyderabad', 'Mumbai', 'Delhi', 'Across India'],
     logo: '',
     tagline: 'Bringing Nature to Life',

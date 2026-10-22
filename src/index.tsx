@@ -6,6 +6,7 @@ import { assetVersion, renderPage, turnstileKey, type AppEnv, type Ctx } from '.
 import { loadSite } from './content/store.ts';
 import { MEDIA_ID } from './lib/media.ts';
 import { clientIp, verifyTurnstile } from './lib/util.ts';
+import { sendEnquiryAlert } from './lib/alerts.ts';
 import type { Site } from './views/site/parts.tsx';
 import {
   AboutPage,
@@ -126,11 +127,13 @@ app.post('/contact', async (c) => {
   }
   if (errors.length) return html(c, <ContactPage site={s} sent={false} errors={errors} values={values} />, 400);
 
-  await c.env.DB.prepare(
-    'INSERT INTO enquiries (name, phone, email, city, project_type, message) VALUES (?, ?, ?, ?, ?, ?)',
+  const row = await c.env.DB.prepare(
+    'INSERT INTO enquiries (name, phone, email, city, project_type, message) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
   )
     .bind(values.name, values.phone, values.email, values.city, values.project_type, values.message)
-    .run();
+    .first<{ id: number }>();
+  // Email the alert in the background so the visitor isn't kept waiting on the mail server.
+  void sendEnquiryAlert(c.env, s.docs, { id: row!.id, ...values }, s.origin).catch((e) => console.error(e));
   return c.redirect('/contact?sent=1#enquiry', 303);
 });
 

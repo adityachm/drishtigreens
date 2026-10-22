@@ -42,6 +42,7 @@ export type Settings = {
   address: string;
   consult_line: string;
   service_areas: string[];
+  notify_emails: string[];
   logo: string;
   tagline: string;
   footer_blurb: string;
@@ -400,6 +401,20 @@ export const DOCS: DocDef[] = [
           { type: 'text', key: 'email', label: 'Email', max: 120 },
           { type: 'textarea', key: 'address', label: 'Business address', rows: 3, max: 400 },
           { type: 'text', key: 'consult_line', label: 'Header line before the phone number', max: 80 },
+        ],
+      },
+      {
+        title: 'Enquiry alerts',
+        help: 'Each new enquiry from the contact form is emailed to these addresses. Replying to the email answers the person who sent it.',
+        fields: [
+          {
+            type: 'lines',
+            key: 'notify_emails',
+            label: 'Send new enquiries to',
+            help: 'One email address per line. Leave empty to use the business email above.',
+            max: 5,
+            emails: true,
+          },
         ],
       },
       {

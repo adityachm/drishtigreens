@@ -11,7 +11,7 @@ services:
     image: drishtigreens:${IMAGE_TAG:-latest}
     container_name: drishtigreens
     user: "1000:1000"
-    # Turnstile keys: the app reads this file itself (not compose env_file, which would treat a
+    # Email and Turnstile settings: the app reads this file itself (not compose env_file, which would treat a
     # "$" in a value as a variable and change it)
     environment:
       ENV_FILE: /run/dg/.env

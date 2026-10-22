@@ -4,6 +4,7 @@
 
 import { isSafeHref } from '../lib/util.ts';
 import { MEDIA_ID } from '../lib/media.ts';
+import { isEmail } from '../lib/mail.ts';
 
 export type Option = { value: string; label: string };
 
@@ -17,7 +18,7 @@ export type Field =
   | (Base & { type: 'image'; required?: boolean })
   | (Base & { type: 'select'; options: Option[] })
   | (Base & { type: 'checkbox' })
-  | (Base & { type: 'lines'; max?: number })
+  | (Base & { type: 'lines'; max?: number; emails?: boolean })
   | (Base & { type: 'list'; itemLabel: string; titleKey: string; fields: Field[]; min?: number; max?: number });
 
 export type Section = { title: string; help?: string; fields: Field[] };
@@ -103,6 +104,7 @@ export function parseFields(
           .filter(Boolean);
         if (lines.length > (f.max ?? 40)) errors.push(`${label} has too many lines (max ${f.max ?? 40}).`);
         if (lines.some((l) => l.length > 200)) errors.push(`${label} has a line longer than 200 characters.`);
+        if (f.emails) for (const l of lines) if (!isEmail(l)) errors.push(`${label}: "${l}" is not an email address.`);
         out[f.key] = lines;
         break;
       }

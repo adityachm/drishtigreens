@@ -11,15 +11,18 @@ export type Enquiry = {
   project_type: string;
   message: string;
   status: 'new' | 'handled';
+  email_status: '' | 'sent' | 'failed' | 'skipped';
   created_at: string;
 };
+
+export type MailStatus = { configured: boolean; from: string; to: string[] };
 
 function when(sqlDate: string): string {
   const d = new Date(sqlDate.replace(' ', 'T') + 'Z');
   return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
-export function Dashboard({ recent, newCount }: { recent: Enquiry[]; newCount: number }) {
+export function Dashboard({ recent, newCount, mail }: { recent: Enquiry[]; newCount: number; mail: MailStatus }) {
   return (
     <>
       <div class="page-head">
@@ -40,6 +43,31 @@ export function Dashboard({ recent, newCount }: { recent: Enquiry[]; newCount: n
           <p>Upload photos, edit their descriptions and remove ones you no longer use.</p>
         </a>
       </div>
+      <section class="card">
+        <div class="card-head">
+          <h2>Email alerts</h2>
+          {mail.configured && mail.to.length > 0 ? <span class="tag tag-gold">On</span> : <span class="tag">Off</span>}
+        </div>
+        {!mail.configured ? (
+          <p class="muted">
+            Sending isn’t set up on the server yet, so new enquiries only appear here. See “Email alerts” in the README.
+          </p>
+        ) : mail.to.length === 0 ? (
+          <p class="muted">
+            Add the addresses that should receive new enquiries in <a href="/admin/edit/settings">Site settings → Enquiry alerts</a>.
+          </p>
+        ) : (
+          <>
+            <p>
+              New enquiries are emailed to <strong>{mail.to.join(', ')}</strong> from {mail.from}.{' '}
+              <a href="/admin/edit/settings">Change</a>
+            </p>
+            <form method="post" action="/admin/test-email">
+              <button type="submit" class="a-btn">Send a test email</button>
+            </form>
+          </>
+        )}
+      </section>
       <section class="card">
         <div class="card-head">
           <h2>Latest enquiries</h2>
@@ -149,6 +177,8 @@ export function EnquiriesPage({ items, filter }: { items: Enquiry[]; filter: str
               <div class="card-head">
                 <h2>
                   {e.name} {e.status === 'new' && <span class="tag tag-gold">New</span>}
+                  {e.email_status === 'failed' && <span class="tag tag-warn">Email alert failed</span>}
+                  {e.email_status === 'skipped' && <span class="tag tag-warn">Not emailed (too many enquiries that hour)</span>}
                 </h2>
                 <span class="muted small">{when(e.created_at)}</span>
               </div>

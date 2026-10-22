@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import type { Db } from './platform/db.ts';
 import type { Storage } from './platform/storage.ts';
+import type { Mailer } from './lib/mail.ts';
 
 export type Bindings = {
   DB: Db;
@@ -9,6 +10,8 @@ export type Bindings = {
   VERSION: string;
   TURNSTILE_SITE_KEY: string;
   TURNSTILE_SECRET: string;
+  /** Sends enquiry alerts; null when SMTP isn't configured. */
+  MAILER: Mailer | null;
 };
 
 export type AppEnv = { Bindings: Bindings };

@@ -1,4 +1,4 @@
-// Settings from the environment, plus an optional KEY=VALUE file (ENV_FILE) for secrets.
+// Settings from the environment, plus an optional KEY=VALUE file (ENV_FILE) for secrets (SMTP, Turnstile).
 // The file is read here rather than by Docker Compose, so a "$" in a secret is kept as typed.
 
 import { readFileSync } from 'node:fs';
@@ -13,6 +13,8 @@ export type Config = {
   migrationsDir: string;
   turnstileSiteKey: string;
   turnstileSecret: string;
+  /** Any other setting, e.g. SMTP_*, from the environment or the ENV_FILE. */
+  get: (key: string) => string;
 };
 
 export function parseEnvFile(text: string): Record<string, string> {
@@ -39,5 +41,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     migrationsDir: resolve(get('MIGRATIONS_DIR', './migrations')),
     turnstileSiteKey: get('TURNSTILE_SITE_KEY'),
     turnstileSecret: get('TURNSTILE_SECRET'),
+    get: (k) => get(k),
   };
 }

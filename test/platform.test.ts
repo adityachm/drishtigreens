@@ -11,17 +11,27 @@ import { withForwardedProto } from '../src/platform/http.ts';
 import { parseEnvFile } from '../src/platform/config.ts';
 import { hashPassword } from '../src/lib/password.ts';
 import { recordFailure, lockoutRemaining } from '../src/lib/auth.ts';
+import type { MailMessage, Mailer } from '../src/lib/mail.ts';
 
 let dir: string;
 let db: Db;
 let raw: DatabaseSync;
 let env: Bindings;
+const sent: MailMessage[] = [];
+let mailFails = false;
+const fakeMailer: Mailer = {
+  from: 'alerts@example.com',
+  async send(m) {
+    if (mailFails) throw new Error('535 bad credentials');
+    sent.push(m);
+  },
+};
 
 beforeAll(() => {
   dir = mkdtempSync(join(tmpdir(), 'dg-test-'));
   ({ db, raw } = openDb(join(dir, 'test.sqlite')));
   migrate(raw, 'migrations');
-  env = { DB: db, MEDIA: new FileStorage(join(dir, 'media')), VERSION: 'test', TURNSTILE_SITE_KEY: '', TURNSTILE_SECRET: '' };
+  env = { DB: db, MEDIA: new FileStorage(join(dir, 'media')), VERSION: 'test', TURNSTILE_SITE_KEY: '', TURNSTILE_SECRET: '', MAILER: fakeMailer };
 });
 
 afterAll(() => {
@@ -32,6 +42,14 @@ afterAll(() => {
 const ORIGIN = 'https://drishtigreens.com';
 const call = (path: string, init: RequestInit = {}) => app.fetch(new Request(ORIGIN + path, init), env);
 const form = (data: Record<string, string>) => new URLSearchParams(data);
+async function emailStatus(name: string): Promise<string> {
+  for (let i = 0; i < 50; i++) {
+    const r = await db.prepare('SELECT email_status FROM enquiries WHERE name = ?').bind(name).first<{ email_status: string }>();
+    if (r?.email_status) return r.email_status;
+    await new Promise((res) => setTimeout(res, 10));
+  }
+  return '';
+}
 
 describe('database', () => {
   it('records applied migrations and skips them next time', () => {
@@ -146,6 +164,37 @@ describe('app', () => {
     const r = await call('/contact', { method: 'POST', body: form({ name: 'Asha', phone: '98450 12345', message: 'Lawn redesign' }) });
     expect(r.status).toBe(303);
     expect(await (await call('/admin/enquiries', { headers: { cookie } })).text()).toContain('Asha');
+  });
+
+  it('does not email enquiries until someone is set to receive them', async () => {
+    expect(await emailStatus('Asha')).toBe('');
+    expect(sent).toHaveLength(0);
+  });
+
+  it('emails new enquiries to the alert addresses with Reply-To set', async () => {
+    await db
+      .prepare("INSERT OR REPLACE INTO content (key, value) VALUES ('settings', ?)")
+      .bind(JSON.stringify({ notify_emails: ['owner@example.com', 'partner@example.com'] }))
+      .run();
+    await call('/contact', { method: 'POST', body: form({ name: 'Meera', phone: '98450 00000', email: 'meera@example.com', message: 'Terrace garden' }) });
+    expect(await emailStatus('Meera')).toBe('sent');
+    expect(sent.at(-1)).toMatchObject({ to: ['owner@example.com', 'partner@example.com'], replyTo: 'meera@example.com' });
+    expect(sent.at(-1)!.text).toContain('Terrace garden');
+  });
+
+  it('keeps the enquiry and flags it when the email fails', async () => {
+    mailFails = true;
+    const r = await call('/contact', { method: 'POST', body: form({ name: 'Kiran', phone: '98450 11111' }) });
+    expect(r.status).toBe(303);
+    expect(await emailStatus('Kiran')).toBe('failed');
+    expect(await (await call('/admin/enquiries', { headers: { cookie } })).text()).toContain('Email alert failed');
+    mailFails = false;
+  });
+
+  it('sends a test email from the dashboard', async () => {
+    const r = await call('/admin/test-email', { method: 'POST', headers: { cookie, Origin: ORIGIN } });
+    expect(r.status).toBe(303);
+    expect(sent.at(-1)!.subject).toContain('Test');
   });
 
   it('accepts an uploaded photo and serves its resized copies', async () => {
