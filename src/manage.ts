@@ -2,6 +2,7 @@
 //   node dist/manage.js migrate
 //   node dist/manage.js set-password          (asks for the password; needs a terminal)
 //   node dist/manage.js backup --dir <folder> [--keep-days 14]
+//   node dist/manage.js test-email [--to <address>]   (sends with the SMTP_* settings)
 
 import { mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -9,6 +10,9 @@ import { loadConfig } from './platform/config.ts';
 import { migrate, openDb } from './platform/db.ts';
 import { hashPassword, MIN_PASSWORD_LENGTH } from './lib/password.ts';
 import { setPasswordHash } from './lib/auth.ts';
+import { mailerFromEnv } from './platform/smtp.ts';
+import { alertRecipients } from './lib/alerts.ts';
+import { loadDocs } from './content/store.ts';
 
 const cfg = loadConfig();
 const [cmd, ...args] = process.argv.slice(2);
@@ -92,8 +96,32 @@ switch (cmd) {
     }
     break;
   }
+  case 'test-email': {
+    const mailer = mailerFromEnv(cfg.get);
+    if (!mailer) {
+      console.error('Email is not set up: SMTP_HOST is missing from the secrets file.');
+      process.exit(1);
+    }
+    const to = opt('to') ? [opt('to')!] : alertRecipients(await loadDocs(db));
+    if (!to.length) {
+      console.error('No one to send to: add an address in Admin → Site settings → Enquiry alerts.');
+      process.exit(1);
+    }
+    try {
+      await mailer.send({
+        to,
+        subject: 'Test: Drishti Greens enquiry alerts',
+        text: `This is a test from the Drishti Greens website server.\n\nNew enquiries will be emailed from ${mailer.from} to ${to.join(', ')}.`,
+      });
+    } catch (e) {
+      console.error(`Sending failed: ${(e as Error).message}`);
+      process.exit(1);
+    }
+    console.log(`Test email sent from ${mailer.from} to ${to.join(', ')}.`);
+    break;
+  }
   default:
-    console.error('Usage: manage.js migrate | set-password | backup --dir <folder> [--keep-days N]');
+    console.error('Usage: manage.js migrate | set-password | backup --dir <folder> [--keep-days N] | test-email [--to <address>]');
     process.exit(1);
 }
 raw.close();

@@ -101,7 +101,7 @@ Crontab:
 0 22 * * * /home/aditya/drishtigreens/deploy/backup.sh >> /home/aditya/drishtigreens-deploy.log 2>&1
 ```
 
-Useful commands on the server: `deploy/set-password.sh`, `deploy/restart.sh` (after editing `.env`), `deploy/backup.sh`, `docker logs drishtigreens`.
+Useful commands on the server: `deploy/set-password.sh`, `deploy/set-email.sh`, `deploy/restart.sh` (after editing `.env`), `deploy/backup.sh`, `docker logs drishtigreens`.
 
 ### Domain
 
@@ -114,12 +114,20 @@ Useful commands on the server: `deploy/set-password.sh`, `deploy/restart.sh` (af
 
 Each enquiry is saved first and then emailed in the background, so a mail problem never loses one. The email goes to the addresses in **Admin → Site settings → Enquiry alerts**, or to the business email if that list is empty. Its Reply-To is the person who sent the enquiry, so replying answers them. If an email fails, the enquiry is tagged "Email alert failed" in the inbox. More than 20 enquiries in an hour stops the emails (the enquiries are still saved), so a spam run can't flood the mailbox.
 
-Sending uses any SMTP account. The settings go in `~/drishtigreens-secrets/.env` on the server; then run `deploy/restart.sh`. For a Gmail account (it needs 2-step verification and an [app password](https://myaccount.google.com/apppasswords)):
+Alerts are sent from `harsha@drishtigreens.com` (Google Workspace) through Google's mail servers. The domain's SPF and DKIM records already allow Google to send for it, which matters because the domain's DMARC policy quarantines anything else.
+
+To set or change the sending account, create an [app password](https://myaccount.google.com/apppasswords) while signed in as that account (it needs 2-Step Verification). Then run this on the server, which asks for the password without showing it, restarts the site and sends a test email:
+
+```sh
+/home/aditya/drishtigreens/deploy/set-email.sh
+```
+
+It writes these settings to `~/drishtigreens-secrets/.env` (any SMTP account works if you edit them by hand and run `deploy/restart.sh`):
 
 ```
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
-SMTP_USER=you@gmail.com
+SMTP_USER=harsha@drishtigreens.com
 SMTP_PASS=the 16-letter app password
 # Optional: SMTP_FROM (defaults to SMTP_USER), SMTP_FROM_NAME (defaults to "Drishti Greens Website"),
 # SMTP_SECURITY=tls (port 465, the default) or starttls (port 587)
