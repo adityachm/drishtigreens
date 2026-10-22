@@ -1,0 +1,39 @@
+# Drishti Greens on the home server (192.168.1.40). Run through deploy/*.sh, which set IMAGE_TAG.
+# The database and photos live outside the image in ~/drishtigreens-data, so deploys never touch them.
+name: drishtigreens
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        APP_VERSION: ${IMAGE_TAG:-dev}
+    image: drishtigreens:${IMAGE_TAG:-latest}
+    container_name: drishtigreens
+    user: "1000:1000"
+    # Turnstile keys: the app reads this file itself (not compose env_file, which would treat a
+    # "$" in a value as a variable and change it)
+    environment:
+      ENV_FILE: /run/dg/.env
+    ports:
+      # LAN only; the Cloudflare tunnel on .42 connects here.
+      - "8790:8790"
+    volumes:
+      - ${DG_HOME:-/home/aditya}/drishtigreens-data:/data
+      - ${DG_HOME:-/home/aditya}/drishtigreens-secrets/.env:/run/dg/.env:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    restart: unless-stopped
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8790/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"

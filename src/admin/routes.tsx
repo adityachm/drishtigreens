@@ -31,6 +31,7 @@ import { clientIp, verifyTurnstile } from '../lib/util.ts';
 import { formSource, parseSections } from '../content/fields.ts';
 import { docDef, type DocKey } from '../content/schema.ts';
 import { loadDocs, saveDoc } from '../content/store.ts';
+import type { Db } from '../platform/db.ts';
 import { AdminLayout, LoginPage, type Flash } from '../views/admin/layout.tsx';
 import { Editor } from '../views/admin/editor.tsx';
 import { AccountPage, Dashboard, EnquiriesPage, MediaPage, type Enquiry } from '../views/admin/pages.tsx';
@@ -143,9 +144,9 @@ admin.get('/', async (c) => {
 
 // ---- Content editors ----
 
-async function allMedia(db: D1Database): Promise<Map<string, Media>> {
+async function allMedia(db: Db): Promise<Map<string, Media>> {
   const { results } = await mediaQuery(db).all();
-  return new Map(results.map((r) => [String(r.id), rowToMedia(r as Parameters<typeof rowToMedia>[0])]));
+  return new Map(results.map((r) => [String(r.id), rowToMedia(r as unknown as Parameters<typeof rowToMedia>[0])]));
 }
 
 admin.get('/edit/:doc', async (c) => {
@@ -229,9 +230,9 @@ admin.post('/api/media', async (c) => {
   const originalKey = `media/${id}/original.${origExt}`;
   await Promise.all([
     ...variants.map(([w, f]) =>
-      c.env.MEDIA.put(`media/${id}/${w}.${ext}`, f, { httpMetadata: { contentType: mime } }),
+      c.env.MEDIA.put(`media/${id}/${w}.${ext}`, f),
     ),
-    c.env.MEDIA.put(originalKey, original, { httpMetadata: { contentType: original.type } }),
+    c.env.MEDIA.put(originalKey, original),
   ]);
   const bytes = original.size + variants.reduce((n, [, f]) => n + f.size, 0);
   await c.env.DB.prepare(
@@ -262,8 +263,7 @@ admin.post('/media/:id/delete', async (c) => {
       text: 'Photo not deleted.',
     }, 400);
   }
-  const listed = await c.env.MEDIA.list({ prefix: `media/${id}/` });
-  if (listed.objects.length) await c.env.MEDIA.delete(listed.objects.map((o) => o.key));
+  await c.env.MEDIA.delete(await c.env.MEDIA.list(`media/${id}/`));
   await c.env.DB.prepare('DELETE FROM media WHERE id = ?').bind(id).run();
   return c.redirect('/admin/media?ok=deleted', 303);
 });

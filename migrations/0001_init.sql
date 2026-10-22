@@ -6,7 +6,7 @@ CREATE TABLE content (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Uploaded images. Files live in R2 under media/<id>/: resized copies named <width>.<ext>
+-- Uploaded images. Files live on disk under <data>/media/<id>/: resized copies named <width>.<ext>
 -- plus the untouched original.
 CREATE TABLE media (
   id TEXT PRIMARY KEY,

@@ -1,3 +1,4 @@
+import type { Db } from '../platform/db.ts';
 import { verifyPassword } from './password.ts';
 
 export const SESSION_COOKIE = 'dg_admin';
@@ -19,17 +20,17 @@ function randomToken(): string {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-export async function hasAdminPassword(db: D1Database): Promise<boolean> {
+export async function hasAdminPassword(db: Db): Promise<boolean> {
   return (await db.prepare('SELECT 1 FROM admin_user WHERE id = 1').first()) !== null;
 }
 
-export async function checkPassword(db: D1Database, password: string): Promise<boolean> {
+export async function checkPassword(db: Db, password: string): Promise<boolean> {
   const row = await db.prepare('SELECT password_hash FROM admin_user WHERE id = 1').first<{ password_hash: string }>();
   if (!row) return false;
   return verifyPassword(password, row.password_hash);
 }
 
-export async function setPasswordHash(db: D1Database, hash: string): Promise<void> {
+export async function setPasswordHash(db: Db, hash: string): Promise<void> {
   await db.batch([
     db
       .prepare(
@@ -42,7 +43,7 @@ export async function setPasswordHash(db: D1Database, hash: string): Promise<voi
 }
 
 /** Creates a session and returns the raw token for the cookie. Only its hash is stored. */
-export async function createSession(db: D1Database): Promise<string> {
+export async function createSession(db: Db): Promise<string> {
   const token = randomToken();
   const t = now();
   await db.batch([
@@ -54,7 +55,7 @@ export async function createSession(db: D1Database): Promise<string> {
   return token;
 }
 
-export async function isValidSession(db: D1Database, token: string | undefined): Promise<boolean> {
+export async function isValidSession(db: Db, token: string | undefined): Promise<boolean> {
   if (!token || token.length > 100) return false;
   const row = await db
     .prepare('SELECT expires_at FROM sessions WHERE token_hash = ?')
@@ -63,13 +64,13 @@ export async function isValidSession(db: D1Database, token: string | undefined):
   return row !== null && row.expires_at > now();
 }
 
-export async function destroySession(db: D1Database, token: string | undefined): Promise<void> {
+export async function destroySession(db: Db, token: string | undefined): Promise<void> {
   if (!token) return;
   await db.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(await sha256Hex(token)).run();
 }
 
 /** Seconds until this IP may try again, or 0 if it is not locked out. */
-export async function lockoutRemaining(db: D1Database, ip: string): Promise<number> {
+export async function lockoutRemaining(db: Db, ip: string): Promise<number> {
   const row = await db
     .prepare('SELECT locked_until FROM login_attempts WHERE ip = ?')
     .bind(ip)
@@ -77,7 +78,7 @@ export async function lockoutRemaining(db: D1Database, ip: string): Promise<numb
   return row ? Math.max(0, row.locked_until - now()) : 0;
 }
 
-export async function recordFailure(db: D1Database, ip: string): Promise<void> {
+export async function recordFailure(db: Db, ip: string): Promise<void> {
   const t = now();
   // Start a fresh window if the last one expired; lock once failures reach the limit.
   await db
@@ -92,6 +93,6 @@ export async function recordFailure(db: D1Database, ip: string): Promise<void> {
     .run();
 }
 
-export async function clearFailures(db: D1Database, ip: string): Promise<void> {
+export async function clearFailures(db: Db, ip: string): Promise<void> {
   await db.prepare('DELETE FROM login_attempts WHERE ip = ?').bind(ip).run();
 }

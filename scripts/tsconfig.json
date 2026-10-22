@@ -9,7 +9,11 @@
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["*.ts", "../src/lib/password.ts"]
+  "include": [
+    "*.ts"
+  ]
 }

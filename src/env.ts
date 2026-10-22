@@ -1,16 +1,21 @@
 import type { Context } from 'hono';
+import type { Db } from './platform/db.ts';
+import type { Storage } from './platform/storage.ts';
 
-export type Bindings = Env & {
-  /** Turnstile secret, set with `wrangler secret put TURNSTILE_SECRET`. Optional. */
-  TURNSTILE_SECRET?: string;
+export type Bindings = {
+  DB: Db;
+  MEDIA: Storage;
+  /** Short id of the running release, appended to /static URLs so each release busts caches. */
+  VERSION: string;
+  TURNSTILE_SITE_KEY: string;
+  TURNSTILE_SECRET: string;
 };
 
 export type AppEnv = { Bindings: Bindings };
 export type Ctx = Context<AppEnv>;
 
-/** Short id of the running deployment, appended to /static URLs so each release busts caches. */
 export function assetVersion(env: Bindings): string {
-  return env.CF_VERSION_METADATA?.id?.slice(0, 8) || 'dev';
+  return env.VERSION || 'dev';
 }
 
 /** Turnstile is on only when both the site key and the secret are configured. */

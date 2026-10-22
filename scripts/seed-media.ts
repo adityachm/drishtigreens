@@ -1,17 +1,16 @@
-// Loads the client's 15 project photos into R2 and the media table as `seed-01` … `seed-15`,
-// the ids the default content refers to. Safe to run again; it overwrites the same ids.
-//   npm run seed:local  [-- <photos folder>]
-//   npm run seed:remote [-- <photos folder>]
-// The folder defaults to ../Drishti_Greens_Website_Photos_Named (files named NN_description.jpg).
+// Loads the client's 15 project photos as `seed-01` … `seed-15`, the ids the default content
+// refers to, into a data folder (database + media). Safe to run again; it overwrites the same ids.
+//   npm run seed                                   # into ./data
+//   DATA_DIR=/some/folder npm run seed -- <photos> # elsewhere, e.g. to prepare the server's data
+// The photos folder defaults to ../Drishti_Greens_Website_Photos_Named (files named NN_description.jpg).
 
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readdirSync, readFileSync, mkdirSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import sharp from 'sharp';
+import { migrate, openDb } from '../src/platform/db.ts';
+import { FileStorage } from '../src/platform/storage.ts';
 
 const WIDTHS = [480, 960, 1600];
-const BUCKET = 'drishtigreens-media';
 
 const ALT: Record<string, string> = {
   '01': 'Villa garden pathway with stone stepping slabs, dark pebbles and tropical planting',
@@ -31,22 +30,13 @@ const ALT: Record<string, string> = {
   '15': 'Sculpted topiary and specimen plants in a nursery',
 };
 
-const args = process.argv.slice(2);
-const target = args.includes('--remote') ? '--remote' : args.includes('--local') ? '--local' : '';
-if (!target) {
-  console.error('Usage: node scripts/seed-media.ts --local | --remote [photos folder]');
-  process.exit(1);
-}
-const here = dirname(fileURLToPath(import.meta.url));
-const root = resolve(here, '..');
-const photos = resolve(root, args.find((a) => !a.startsWith('--')) ?? '../Drishti_Greens_Website_Photos_Named');
-const tmp = join(here, '.seed-tmp');
-rmSync(tmp, { recursive: true, force: true });
-mkdirSync(tmp, { recursive: true });
+const dataDir = resolve(process.env.DATA_DIR ?? './data');
+const photos = resolve(process.argv[2] ?? '../Drishti_Greens_Website_Photos_Named');
+mkdirSync(dataDir, { recursive: true });
 
-function wrangler(...a: string[]) {
-  execFileSync('npx', ['wrangler', ...a], { stdio: ['ignore', 'ignore', 'inherit'], cwd: root });
-}
+const { db, raw } = openDb(join(dataDir, 'drishtigreens.sqlite'));
+migrate(raw, resolve('migrations'));
+const storage = new FileStorage(join(dataDir, 'media'));
 
 const files = readdirSync(photos)
   .filter((f) => /^\d{2}_.+\.jpe?g$/i.test(f))
@@ -56,33 +46,26 @@ if (!files.length) {
   process.exit(1);
 }
 
-const rows: string[] = [];
 for (const file of files) {
   const nn = file.slice(0, 2);
   const id = `seed-${nn}`;
   const src = join(photos, file);
   const { info } = await sharp(src).rotate().toBuffer({ resolveWithObject: true });
   const widths = [...new Set(WIDTHS.map((w) => Math.min(w, info.width)))];
-  process.stdout.write(`${id}  ${file}  ${info.width}×${info.height} → ${widths.join(', ')}px … `);
-
   for (const w of widths) {
-    const out = join(tmp, `${id}-${w}.webp`);
-    await sharp(src).rotate().resize({ width: w }).webp({ quality: 78 }).toFile(out);
-    wrangler('r2', 'object', 'put', `${BUCKET}/media/${id}/${w}.webp`, '--file', out, '--content-type', 'image/webp', target);
+    const buf = await sharp(src).rotate().resize({ width: w }).webp({ quality: 78 }).toBuffer();
+    await storage.put(`media/${id}/${w}.webp`, new Blob([new Uint8Array(buf)]));
   }
-  wrangler('r2', 'object', 'put', `${BUCKET}/media/${id}/original.jpg`, '--file', src, '--content-type', 'image/jpeg', target);
-
-  const alt = (ALT[nn] ?? file.slice(3).replace(/\.\w+$/, '').replace(/_/g, ' ')).replace(/'/g, "''");
-  const name = file.replace(/'/g, "''");
-  rows.push(
-    `INSERT OR REPLACE INTO media (id, alt, width, height, ext, widths, original_key, original_name, bytes) ` +
-      `VALUES ('${id}', '${alt}', ${info.width}, ${info.height}, 'webp', '${JSON.stringify(widths)}', 'media/${id}/original.jpg', '${name}', 0);`,
-  );
-  console.log('done');
+  const original = readFileSync(src);
+  await storage.put(`media/${id}/original.jpg`, new Blob([new Uint8Array(original)]));
+  await db
+    .prepare(
+      `INSERT OR REPLACE INTO media (id, alt, width, height, ext, widths, original_key, original_name, bytes)
+       VALUES (?, ?, ?, ?, 'webp', ?, ?, ?, ?)`,
+    )
+    .bind(id, ALT[nn] ?? file.slice(3).replace(/\.\w+$/, '').replace(/_/g, ' '), info.width, info.height, JSON.stringify(widths), `media/${id}/original.jpg`, file, original.length)
+    .run();
+  console.log(`${id}  ${file}  ${info.width}×${info.height} → ${widths.join(', ')}px`);
 }
-
-const sqlFile = join(tmp, 'seed.sql');
-writeFileSync(sqlFile, rows.join('\n') + '\n');
-wrangler('d1', 'execute', 'drishtigreens', target, '--yes', '--file', sqlFile);
-rmSync(tmp, { recursive: true, force: true });
-console.log(`\nSeeded ${files.length} photos (${target.slice(2)}).`);
+raw.close();
+console.log(`\nSeeded ${files.length} photos into ${dataDir}`);

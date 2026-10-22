@@ -1,6 +1,7 @@
 import { DEFAULTS } from './defaults.ts';
 import type { DocKey, Docs } from './schema.ts';
 import { mediaQuery, toMediaMap, type MediaMap } from '../lib/media.ts';
+import type { Db } from '../platform/db.ts';
 
 type ContentRow = { key: string; value: string };
 
@@ -19,13 +20,13 @@ export function mergeDocs(rows: ContentRow[]): Docs {
   return docs;
 }
 
-export async function loadDocs(db: D1Database): Promise<Docs> {
+export async function loadDocs(db: Db): Promise<Docs> {
   const { results } = await db.prepare('SELECT key, value FROM content').all<ContentRow>();
   return mergeDocs(results);
 }
 
 /** Content and media in one round trip, for rendering public pages. */
-export async function loadSite(db: D1Database): Promise<{ docs: Docs; media: MediaMap }> {
+export async function loadSite(db: Db): Promise<{ docs: Docs; media: MediaMap }> {
   const [content, media] = await db.batch([db.prepare('SELECT key, value FROM content'), mediaQuery(db)]);
   return {
     docs: mergeDocs(content.results as ContentRow[]),
@@ -33,7 +34,7 @@ export async function loadSite(db: D1Database): Promise<{ docs: Docs; media: Med
   };
 }
 
-export async function saveDoc(db: D1Database, key: DocKey, value: unknown): Promise<void> {
+export async function saveDoc(db: Db, key: DocKey, value: unknown): Promise<void> {
   await db
     .prepare(
       `INSERT INTO content (key, value, updated_at) VALUES (?, ?, datetime('now'))

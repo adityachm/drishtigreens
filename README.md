@@ -1,44 +1,46 @@
 # Drishti Greens website
 
-The Drishti Greens site with a password-protected admin panel at `/admin`. All text and photos can be edited from the panel. It runs on Cloudflare Workers, with content in D1 and photos in R2.
+The Drishti Greens site with a password-protected admin panel at `/admin`. All text and photos can be edited from the panel. It runs as one small Node.js container on the home server (192.168.1.40). Content is stored in SQLite and photos on disk, and the site is reached through the Cloudflare tunnel on .42.
 
 ```
-Visitor ─► Worker (Hono, server-rendered pages) ─► D1: content, photos list, enquiries, admin login
-                                                └► R2: photos (resized copies + originals)
-Admin   ─► /admin (password login) ─► same Worker, writes D1/R2. Changes are live on save.
+Visitor ─► Cloudflare ─► tunnel "ganga" (.42) ─► .40:8790  Node + Hono ─► ~/drishtigreens-data/
+                                                                          ├─ drishtigreens.sqlite (content, photo list, enquiries, admin login)
+Admin ─► /admin (password) ─► same app. Changes are live on save.         └─ media/ (photos: resized copies + originals)
 ```
 
-- **Content changes** (text, photos, services, projects) are made in `/admin` and go live immediately. No deploy is needed.
-- **Code changes** go through GitHub. A push to `main` runs the checks, applies database migrations and deploys.
+- **Content changes** (text, photos, services, projects) are made in `/admin` and go live immediately.
+- **Code changes**: push a **signed** commit to `main` and the server deploys it within seconds. Commits that aren't signed by a trusted key are refused. See [Deploys](#deploys).
 
 ## Project layout
 
 | Path | What it is |
 | --- | --- |
-| `src/index.tsx` | Public routes, the contact form, photo serving and security headers |
+| `src/index.tsx` | Public routes, the contact form, photo serving, security headers |
 | `src/admin/routes.tsx` | Admin panel: sign-in, editors, photos, enquiries, password |
 | `src/content/schema.ts` | The editable documents and their fields. **Add a field here to make it editable.** |
 | `src/content/defaults.ts` | Starting content from the client brief, used until a document is saved |
-| `src/views/site/*` | Public page templates |
-| `src/views/admin/*` | Admin page templates; the editor form is generated from `schema.ts` |
+| `src/views/site/*`, `src/views/admin/*` | Page templates; the admin editor form is generated from `schema.ts` |
+| `src/platform/` | SQLite (`node:sqlite`), photo storage on disk, settings |
+| `src/server.ts` | Node entry point; `src/manage.ts`: migrate / set-password / backup |
 | `public/static/` | CSS, JS and favicon |
-| `migrations/` | D1 schema |
-| `scripts/` | One-off scripts: set the admin password, load the starting photos |
+| `migrations/` | Database schema, applied in order and recorded in the `migrations` table |
+| `deploy/` | Docker image and the home-server scripts |
+| `scripts/` | Local dev server; loading the starting photos |
 
 ### How editing works
 
-Each page's content is one JSON document in the `content` table (`home`, `about`, `services`, `projects`, `contact`, `settings`). The admin editor is generated from the field list in `src/content/schema.ts`, and submissions are validated against that list. Saved values are merged over `defaults.ts`, so a field added in code shows its default until someone edits it.
+Each page's content is one JSON document in the `content` table (`home`, `about`, `services`, `projects`, `contact`, `settings`). The editor is generated from the field list in `src/content/schema.ts`, and submissions are validated against that list. Saved values are merged over `defaults.ts`, so a field added in code shows its default until someone edits it.
 
-Photos are resized **in the admin's browser** to 480, 960 and 1600 px WebP copies (JPEG where WebP isn't supported, e.g. older Safari). The browser uploads these together with the untouched original. Pages serve the copies with `srcset`, and every photo URL is cached for a year, which is safe because each upload gets a new ID.
+Photos are resized **in the admin's browser** to 480, 960 and 1600 px WebP copies (JPEG where WebP isn't supported, e.g. older Safari), so the server never has to process images. Every photo URL is cached for a year, which is safe because each upload gets a new ID. Cloudflare's edge serves most photo and CSS requests, so they rarely reach the home server.
 
 ### Admin security
 
-- There is one password and no username. Only a salted PBKDF2-SHA256 hash is stored, in D1.
+- There is one password and no username. Only a salted PBKDF2-SHA256 hash is stored.
 - Sessions use a random token in an `HttpOnly`, `Secure`, `SameSite=Strict` cookie scoped to `/admin`. Only the token's SHA-256 is stored. Sessions last 7 days. Changing the password signs out every device.
 - After 5 wrong passwords from one IP, sign-in is locked for 15 minutes.
 - Every admin `POST` is rejected unless it comes from the site itself (CSRF protection).
-- Optional: Cloudflare Turnstile on the login and contact forms (see below).
-- There is no "forgot password" email. Reset the password with `npm run set-password:remote`.
+- The tunnel speaks plain HTTP to the server. The app trusts `X-Forwarded-Proto: https` from it, so secure cookies and the same-origin checks still work.
+- There is no "forgot password" email. Reset the password on the server with `~/drishtigreens/deploy/set-password.sh`.
 
 ## Local development
 
@@ -46,57 +48,76 @@ Requires Node 24+.
 
 ```sh
 npm install
-npm run db:migrate:local
-npm run seed:local            # loads ../Drishti_Greens_Website_Photos_Named into local R2
-npm run set-password:local    # choose a local admin password
-npm run dev                   # http://localhost:8787  and  /admin
+npm run seed            # database + the 15 photos from ../Drishti_Greens_Website_Photos_Named into ./data
+npm run set-password    # choose a local admin password
+npm run dev             # http://localhost:8787  and  /admin  (rebuilds and restarts on save)
 ```
 
-Checks: `npm run typecheck` and `npm test`.
+Checks: `npm run typecheck`, `npm test` and `npm run build`. GitHub Actions runs the same on every push and pull request.
 
-## One-time Cloudflare setup
+## Deploys
 
-Run these from this folder, logged in with `npx wrangler login`.
+The server checks GitHub every 5 seconds (`deploy/autodeploy.sh`, started by cron). When `main` has a new commit it:
 
-1. **Create the database and the photo bucket**
-   ```sh
-   npx wrangler d1 create drishtigreens
-   npx wrangler r2 bucket create drishtigreens-media
-   ```
-   Copy the `database_id` printed by the first command into `wrangler.jsonc`, replacing the zeros. Then commit it.
+1. fetches the commit **without checking it out**;
+2. **verifies its signature** against `~/drishtigreens-secrets/allowed_signers`. That file lives only on the server, so nothing pushed to the repo can change who is trusted. A commit that is unsigned or signed by any other key is refused and logged, and the site keeps running the previous version;
+3. checks the commit out and runs `deploy/deploy.sh`: build the image, back up, migrate, restart, health check. If the new version isn't healthy, it rolls back automatically.
 
-2. **Create the tables, load the photos and set the admin password**
-   ```sh
-   npm run db:migrate:remote
-   npm run seed:remote
-   npm run set-password:remote
-   ```
+The signature covers the whole tree of files, so a verified commit at the tip of `main` means every deployed file is exactly what the key holder signed.
 
-3. **First deploy**: `npm run deploy`. The site is then live at `https://drishtigreens.<your-subdomain>.workers.dev`.
+Log: `~/drishtigreens-deploy.log` on the server.
 
-4. **Domain**: once `drishtigreens.com` is on this Cloudflare account, uncomment `routes` in `wrangler.jsonc` and deploy. Requests to `www.` are redirected to the bare domain.
+### Signing commits
 
-5. **Turnstile (recommended, stops spam enquiries)**: create a widget for the domain in the Cloudflare dashboard. Put its site key in `vars.TURNSTILE_SITE_KEY` in `wrangler.jsonc`, then store the secret with `npx wrangler secret put TURNSTILE_SECRET`. Turnstile only switches on when both are set.
+This checkout is set up to sign every commit with `~/.ssh/id_rsa` (repo-local git config):
 
-## CI/CD (GitHub Actions)
+```sh
+git config gpg.format ssh
+git config user.signingkey ~/.ssh/id_rsa
+git config commit.gpgsign true
+```
 
-`.github/workflows/ci.yml`:
+To trust another person or machine, add its **public** key on the server:
 
-- **Every push and pull request** runs the typecheck, the tests and a build without deploying.
-- **A push to `main`** also applies new D1 migrations and then deploys. Work on `develop` and merge into `main` to release.
+```sh
+echo 'name namespaces="git" ssh-ed25519 AAAA…' >> ~/drishtigreens-secrets/allowed_signers
+```
 
-Repository secrets to add (Settings → Secrets and variables → Actions):
+Merging a pull request with GitHub's button creates a commit signed by GitHub, not by you, so the server won't deploy it. Merge locally (`git merge --ff-only` or a signed merge commit) and push.
 
-| Secret | Value |
+### Server layout (192.168.1.40, user aditya)
+
+| Path | What it is |
 | --- | --- |
-| `CLOUDFLARE_ACCOUNT_ID` | From `npx wrangler whoami` |
-| `CLOUDFLARE_API_TOKEN` | An API token made from the **Edit Cloudflare Workers** template, with **Account → D1 → Edit** added |
+| `~/drishtigreens/` | This repository on `main`. Only ever moved to a verified commit |
+| `~/drishtigreens-data/` | `drishtigreens.sqlite` and `media/`. Deploys never touch it |
+| `~/drishtigreens-backups/` | Database copies (14 days) and a copy of every photo |
+| `~/drishtigreens-secrets/` | `allowed_signers` (who may deploy) and `.env` (Turnstile keys) |
 
-The `deploy` job runs in a GitHub environment named `production`. You can add required reviewers to that environment if you want to approve each release.
+Crontab:
 
-### Database changes
+```
+* * * * * /home/aditya/drishtigreens/deploy/autodeploy.sh
+0 22 * * * /home/aditya/drishtigreens/deploy/backup.sh >> /home/aditya/drishtigreens-deploy.log 2>&1
+```
 
-Add a new numbered file in `migrations/` (never edit one that has been applied). CI applies it before deploying the code that needs it. Locally, run `npm run db:migrate:local`.
+Useful commands on the server: `deploy/set-password.sh`, `deploy/restart.sh` (after editing `.env`), `deploy/backup.sh`, `docker logs drishtigreens`.
+
+### Domain
+
+`drishtigreens.com` must be on Cloudflare (free plan). Add the site in Cloudflare, switch the nameservers at GoDaddy, then in **Zero Trust → Networks → Tunnels → ganga → Public hostnames** add:
+
+- `drishtigreens.com` → `HTTP` → `192.168.1.40:8790`
+- `www.drishtigreens.com` → `HTTP` → `192.168.1.40:8790` (the app redirects `www` to the bare domain)
+
+### Turnstile (recommended, stops spam enquiries)
+
+Create a Turnstile widget for the domain in Cloudflare, then on the server put both keys in `~/drishtigreens-secrets/.env` and run `deploy/restart.sh`:
+
+```
+TURNSTILE_SITE_KEY=0x…
+TURNSTILE_SECRET=0x…
+```
 
 ## Before launch
 

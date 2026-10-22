@@ -1,3 +1,5 @@
+import type { Db } from '../platform/db.ts';
+
 export type Media = {
   id: string;
   alt: string;
@@ -25,7 +27,7 @@ export function rowToMedia(r: MediaRow): Media {
   return { ...r, widths: JSON.parse(r.widths) as number[] };
 }
 
-export function mediaQuery(db: D1Database) {
+export function mediaQuery(db: Db) {
   return db.prepare('SELECT * FROM media ORDER BY created_at DESC, id');
 }
 

@@ -51,14 +51,21 @@ const MEDIA_FILE = /^(\d{1,4}\.(webp|jpg)|original\.(jpg|png|webp|gif|avif|heic|
 app.get('/media/:id/:file', async (c) => {
   const { id, file } = c.req.param();
   if (!MEDIA_ID.test(id) || !MEDIA_FILE.test(file)) return c.notFound();
-  const obj = await c.env.MEDIA.get(`media/${id}/${file}`, { onlyIf: c.req.raw.headers });
+  const obj = await c.env.MEDIA.get(`media/${id}/${file}`, c.req.header('if-none-match'));
   if (!obj) return c.notFound();
-  const headers = new Headers();
-  obj.writeHttpMetadata(headers);
-  headers.set('etag', obj.httpEtag);
-  // Each upload gets a new id, so a URL's content never changes.
-  headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-  return 'body' in obj ? new Response(obj.body, { headers }) : new Response(null, { status: 304, headers });
+  const headers = {
+    'Content-Type': obj.contentType,
+    ETag: obj.etag,
+    // Each upload gets a new id, so a URL's content never changes.
+    'Cache-Control': 'public, max-age=31536000, immutable',
+  };
+  if (!obj.body) return new Response(null, { status: 304, headers });
+  return new Response(obj.body, { headers: { ...headers, 'Content-Length': String(obj.size) } });
+});
+
+app.get('/healthz', async (c) => {
+  await c.env.DB.prepare('SELECT 1').first();
+  return c.text('ok');
 });
 
 // ---- Public pages ----
