@@ -1,7 +1,6 @@
 import type { Child } from 'hono/jsx';
 import { raw } from 'hono/html';
-import type { Docs, Project } from '../../content/schema.ts';
-import { PROJECT_CATEGORIES } from '../../content/schema.ts';
+import type { Docs, GalleryPhoto } from '../../content/schema.ts';
 import { srcset, urlAtLeast, type MediaMap } from '../../lib/media.ts';
 import { paragraphs, safeHref, telHref, whatsappHref } from '../../lib/util.ts';
 
@@ -26,12 +25,6 @@ export const SECTIONS: [string, string][] = [
   ['approach', 'Approach'],
   ['contact', 'Contact'],
 ];
-
-const CATEGORY_LABEL = Object.fromEntries(PROJECT_CATEGORIES.map((c) => [c.value, c.label]));
-
-export function categoryLabel(value: string): string {
-  return CATEGORY_LABEL[value] ?? value;
-}
 
 // ---- Small building blocks ----
 
@@ -86,21 +79,23 @@ function LogoMark({ light }: { light?: boolean }) {
   );
 }
 
+/** The brand mark (the uploaded logo, or a drawn fallback) beside the name. On the dark footer
+ *  the mark sits on a light badge so its green stays visible. */
 function Logo({ site, light, tagline }: { site: Site; light?: boolean; tagline: string }) {
   const logo = site.docs.settings.logo ? site.media.get(site.docs.settings.logo) : undefined;
   return (
     <a class="logo" href="/#home" aria-label="Drishti Greens, home">
-      {logo && !light ? (
-        <img class="logo-img" src={urlAtLeast(logo, 480)} alt="Drishti Greens" width={logo.width} height={logo.height} />
+      {logo ? (
+        <span class={light ? 'logo-mark logo-badge' : 'logo-mark'}>
+          <img src={urlAtLeast(logo, 480)} alt="" width={logo.width} height={logo.height} />
+        </span>
       ) : (
-        <>
-          <LogoMark light={light} />
-          <span class="logo-text">
-            <b>DRISHTI GREENS</b>
-            <small>{tagline}</small>
-          </span>
-        </>
+        <LogoMark light={light} />
       )}
+      <span class="logo-text">
+        <b>DRISHTI GREENS</b>
+        <small>{tagline}</small>
+      </span>
     </a>
   );
 }
@@ -167,7 +162,8 @@ export function Layout({ site, meta, children, scripts }: { site: Site; meta: Pa
         <meta property="og:url" content={canonical} />
         {ogImage && <meta property="og:image" content={site.origin + urlAtLeast(ogImage, 1200)} />}
         <meta name="theme-color" content="#1E3A2A" />
-        <link rel="icon" href={`/static/favicon.svg?v=${site.v}`} type="image/svg+xml" />
+        <link rel="icon" href={`/static/favicon.png?v=${site.v}`} type="image/png" />
+        <link rel="apple-touch-icon" href={`/static/apple-touch-icon.png?v=${site.v}`} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
         <link
@@ -307,54 +303,34 @@ export function WhyBand({ site }: { site: Site }) {
   );
 }
 
-/** Project cards with category chips and a lightbox. `initial` is the category shown first:
- *  'featured', 'all' or a category value. Hidden cards stay in the page so filtering is instant. */
-export function Gallery({ site, items, initial, chips }: { site: Site; items: Project[]; initial: string; chips: 'home' | 'all' | 'none' }) {
-  const present = PROJECT_CATEGORIES.filter((c) => items.some((p) => p.category === c.value));
-  const first: [string, string][] = chips === 'home' ? [['featured', 'Featured'], ['all', 'All']] : [['all', 'All projects']];
-  const chipList = [...first, ...present.map((c): [string, string] => [c.value, c.label])];
-  const shows = (p: Project) =>
-    initial === 'all' || (initial === 'featured' ? p.featured : p.category === initial);
+/** Photo grid with a lightbox. */
+export function Gallery({ site, items }: { site: Site; items: GalleryPhoto[] }) {
   return (
     <div class="gallery-wrap" data-gallery>
-      {chips !== 'none' && (
-        <div class="chips" role="group" aria-label="Filter projects by category">
-          {chipList.map(([value, label]) => (
-            <button class="chip" type="button" data-cat={value} aria-pressed={value === initial ? 'true' : 'false'}>
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
       <div class="gallery">
         {items.map((p) => {
           const m = site.media.get(p.image);
+          if (!m) return null;
           return (
-            <article class="proj" data-cat={p.category} data-featured={p.featured ? '1' : '0'} hidden={!shows(p)}>
+            <figure class="proj">
               <button
                 type="button"
                 class="proj-open"
-                aria-label={`Enlarge: ${p.title}`}
-                data-full={m ? urlAtLeast(m, 1600) : ''}
-                data-title={p.title}
+                aria-label={`Enlarge photo${p.caption ? `: ${p.caption}` : ''}`}
+                data-full={urlAtLeast(m, 1600)}
                 data-caption={p.caption}
-                data-alt={m?.alt ?? p.title}
+                data-alt={m.alt}
               >
                 <Img site={site} id={p.image} sizes="(max-width: 640px) 100vw, (max-width: 960px) 50vw, 400px" />
               </button>
-              <div class="meta">
-                <span class="cat">{categoryLabel(p.category)}</span>
-                <h3>{p.title}</h3>
-                {p.caption && <p>{p.caption}</p>}
-              </div>
-            </article>
+              {p.caption && <figcaption>{p.caption}</figcaption>}
+            </figure>
           );
         })}
       </div>
       <dialog class="lightbox" aria-label="Project photo">
         <img src="" alt="" />
         <div class="cap">
-          <h3></h3>
           <p></p>
           <button type="button" class="lb-close" aria-label="Close">
             ×

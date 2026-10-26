@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULTS } from '../src/content/defaults.ts';
 import { mergeDocs } from '../src/content/store.ts';
 import type { Site } from '../src/views/site/parts.tsx';
+import type { Media } from '../src/lib/media.ts';
 import { EMPTY_ENQUIRY, HomePage } from '../src/views/site/pages.tsx';
 import { SECTIONS } from '../src/views/site/parts.tsx';
 
@@ -18,7 +19,13 @@ function site(overrides: Partial<Site> = {}): Site {
 }
 
 const render = async (el: unknown) => String(await (el as Promise<string>));
-const page = (s: Site, category = '') => <HomePage site={s} category={category} contact={{ sent: false, errors: [], values: EMPTY_ENQUIRY }} />;
+const page = (s: Site) => <HomePage site={s} contact={{ sent: false, errors: [], values: EMPTY_ENQUIRY }} />;
+const fakeMedia = (id: string): Media => ({ id, alt: id, width: 800, height: 600, ext: 'webp', widths: [480, 800], original_key: null, original_name: null, bytes: 0, created_at: '' });
+/** A site where every image the default content uses exists. */
+function siteWithMedia(): Site {
+  const ids = JSON.stringify(DEFAULTS).match(/seed-\d+/g)!;
+  return site({ media: new Map(ids.map((id) => [id, fakeMedia(id)])) });
+}
 
 describe('public pages', () => {
   it('escapes HTML typed into the admin panel', async () => {
@@ -35,15 +42,43 @@ describe('public pages', () => {
     expect(html).not.toContain('tel:');
   });
 
-  it('shows only featured projects on the home page at first', async () => {
-    const html = await render(page(site()));
-    const shown = html.match(/<article class="proj"[^>]*>/g)!.filter((t) => !/\shidden/.test(t));
-    expect(shown).toHaveLength(DEFAULTS.projects.items.filter((p) => p.featured).length);
+  it('shows major projects: photo cards first, then logo cards, with each client once', async () => {
+    const html = await render(page(siteWithMedia()));
+    expect(html.match(/class="mp-card"/g)).toHaveLength(3);
+    expect(html.match(/class="mp-logo-card"/g)).toHaveLength(2);
+    for (const p of DEFAULTS.projects.items) expect(html.split(`<h3>${p.name}</h3>`).length - 1, p.name).toBe(1);
+    expect(html).toContain('href="https://pushkarcottages.com/"');
   });
 
-  it('opens the gallery on the category in the link', async () => {
-    const html = await render(page(site(), 'trees'));
-    expect(html).toMatch(/data-cat="trees" aria-pressed="true"/);
+  it('shows a project status only when one is set', async () => {
+    const s = siteWithMedia();
+    expect(await render(page(s))).not.toContain('class="status ');
+    s.docs.projects.items[0].status = 'in-progress';
+    s.docs.projects.items[2].status = 'completed';
+    const html = await render(page(s));
+    expect(html).toContain('<span class="status status-in-progress">In progress</span>');
+    expect(html).toContain('<span class="status status-completed">Completed</span>');
+  });
+
+  it('hides the gallery until photos are uploaded', async () => {
+    const s = siteWithMedia();
+    expect(await render(page(s))).not.toContain('data-gallery');
+    s.docs.projects.gallery = [{ image: 'seed-20', caption: 'New villa', visible: true }];
+    const html = await render(page(s));
+    expect(html).toContain('data-gallery');
+    expect(html).toContain('<figcaption>New villa</figcaption>');
+  });
+
+  it('lays out seven services as full rows (4 columns, first card wide)', async () => {
+    const html = await render(page(siteWithMedia()));
+    expect(html).toContain('class="services-grid cols-4 wide-lead"');
+  });
+
+  it('uses the uploaded logo next to the name, and has no philosophy section', async () => {
+    const html = await render(page(siteWithMedia()));
+    expect(html).toMatch(/class="logo-mark"><img src="\/media\/seed-16\//);
+    expect(html).toContain('DRISHTI GREENS');
+    expect(html.toLowerCase()).not.toContain('philosophy');
   });
 
   it('is one page: every menu item has its section and every internal link points at one', async () => {
@@ -61,8 +96,7 @@ describe('public pages', () => {
     const html = await render(page(site()));
     const visible = DEFAULTS.services.items.filter((x) => x.visible);
     expect(html.match(/data-service="\d+"/g)).toHaveLength(visible.length);
-    expect(html).toContain('Tree relocation requires planning and careful handling');
-    expect(html).toContain('data-show-category="trees"');
+    expect(html).toContain('achieves a 99% tree relocation success rate');
   });
 });
 

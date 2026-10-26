@@ -29,7 +29,7 @@ Admin ─► /admin (password) ─► same app. Changes are live on save.       
 
 ### How editing works
 
-The website is a single page; the menu scrolls to its sections (Home, About, Services, Projects, Approach, Contact). Each section's content is one JSON document in the `content` table (`home`, `about`, `services`, `projects`, `approach`, `contact`, plus `settings` for details used everywhere), with its own screen in the admin panel. The editor is generated from the field list in `src/content/schema.ts`, and submissions are validated against that list. Saved values are merged over `defaults.ts`, so a field added in code shows its default until someone edits it.
+The website is a single page; the menu scrolls to its sections (Home, About, Services, Projects, Approach, Contact). Projects shows the major projects (photo cards, then logo cards) and, once photos are uploaded in the admin, a gallery of new projects. Each section's content is one JSON document in the `content` table (`home`, `about`, `services`, `projects`, `approach`, `contact`, plus `settings` for details used everywhere), with its own screen in the admin panel. The editor is generated from the field list in `src/content/schema.ts`, and submissions are validated against that list. Saved values are merged over `defaults.ts`, so a field added in code shows its default until someone edits it.
 
 Photos are resized **in the admin's browser** to 480, 960 and 1600 px WebP copies (JPEG where WebP isn't supported, e.g. older Safari), so the server never has to process images. Every photo URL is cached for a year, which is safe because each upload gets a new ID. Cloudflare's edge serves most photo and CSS requests, so they rarely reach the home server.
 
@@ -48,7 +48,8 @@ Requires Node 24+.
 
 ```sh
 npm install
-npm run seed            # database + the 15 photos from ../Drishti_Greens_Website_Photos_Named into ./data
+npm run seed            # database + every NN_name.jpg/png in ../Drishti_Greens_Website_Photos_Named into ./data
+                        # (01–15 original photos, 16 logo, 17–28 slider/about/services, 29–36 client logos and project photos)
 npm run set-password    # choose a local admin password
 npm run dev             # http://localhost:8787  and  /admin  (rebuilds and restarts on save)
 ```

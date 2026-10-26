@@ -1,6 +1,7 @@
 import { urlAtLeast } from '../../lib/media.ts';
-import { telHref, whatsappHref } from '../../lib/util.ts';
-import { Btn, Gallery, Img, Layout, Paras, WhyBand, categoryLabel, type Site } from './parts.tsx';
+import { safeHref, telHref, whatsappHref } from '../../lib/util.ts';
+import type { MajorProject, Service } from '../../content/schema.ts';
+import { Btn, Gallery, Img, Layout, Paras, WhyBand, type Site } from './parts.tsx';
 
 export type EnquiryValues = { name: string; phone: string; email: string; city: string; project_type: string; message: string };
 
@@ -9,11 +10,11 @@ export type ContactState = { sent: boolean; errors: string[]; values: EnquiryVal
 export const EMPTY_ENQUIRY: EnquiryValues = { name: '', phone: '', email: '', city: '', project_type: '', message: '' };
 
 /** The whole website: one page, one section per menu item. */
-export function HomePage({ site, category, contact }: { site: Site; category: string; contact: ContactState }) {
+export function HomePage({ site, contact }: { site: Site; contact: ContactState }) {
   const { home: h, about: a, services, projects, approach, contact: c, settings: st } = site.docs;
   const visibleServices = services.items.filter((s) => s.visible);
-  const visibleProjects = projects.items.filter((p) => p.visible);
-  const initial = visibleProjects.some((p) => p.category === category) ? category : 'featured';
+  const majorProjects = projects.items.filter((p) => p.visible);
+  const galleryPhotos = projects.gallery.filter((p) => p.visible && site.media.has(p.image));
   const wa = whatsappHref(st.whatsapp, 'Hello Drishti Greens, I would like to discuss a landscaping project.');
   const scripts = site.turnstileKey ? <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script> : undefined;
 
@@ -71,43 +72,29 @@ export function HomePage({ site, category, contact }: { site: Site; category: st
       </section>
 
       {/* ---- About ---- */}
-      <section class="profile section" id="about">
+      <section class="about-sec section" id="about">
         <div class="wrap">
-          <div class="photo-stack">
-            <Img site={site} id={a.about_image_main} class="a" sizes="(max-width: 960px) 90vw, 560px" />
-            {a.about_image_inset && (
-              <div class="b-wrap">
-                <Img site={site} id={a.about_image_inset} class="b" sizes="(max-width: 960px) 45vw, 280px" />
-              </div>
-            )}
-            {a.stat_value && (
-              <div class="years">
-                <b>{a.stat_value}</b>
-                <span>{a.stat_label}</span>
-              </div>
-            )}
-          </div>
-          <div class="copy">
+          <div class="section-head">
             <span class="eyebrow">About us</span>
             <h2 class="h2">{a.about_heading}</h2>
-            <Paras text={a.about_body} />
-            {a.about_quote && <p class="quote">{a.about_quote}</p>}
           </div>
+          {a.about_image && (
+            <figure class="about-photo">
+              <Img site={site} id={a.about_image} sizes="(max-width: 1240px) 100vw, 1180px" />
+              {a.stat_value && (
+                <figcaption class="years">
+                  <b>{a.stat_value}</b>
+                  <span>{a.stat_label}</span>
+                </figcaption>
+              )}
+            </figure>
+          )}
+          <div class="about-text">
+            <Paras text={a.about_body} />
+          </div>
+          {a.about_quote && <p class="quote about-quote">{a.about_quote}</p>}
         </div>
       </section>
-
-      {a.philosophy_body && (
-        <section class="section split-section reverse">
-          <div class="wrap">
-            <div class="copy">
-              <span class="eyebrow">Our philosophy</span>
-              <h2 class="h2">{a.philosophy_heading}</h2>
-              <Paras text={a.philosophy_body} />
-            </div>
-            <Img site={site} id={a.philosophy_image} class="split-img" sizes="(max-width: 960px) 90vw, 560px" />
-          </div>
-        </section>
-      )}
 
       <WhyBand site={site} />
 
@@ -118,44 +105,7 @@ export function HomePage({ site, category, contact }: { site: Site; category: st
             <span class="eyebrow">What we do</span>
             <h2 class="h2">{services.heading}</h2>
           </div>
-          <div class="services-grid">
-            {visibleServices.map((s, i) => {
-              const m = site.media.get(s.image);
-              const hasRelated = s.category && visibleProjects.some((p) => p.category === s.category);
-              return (
-                <article class="svc">
-                  <figure>
-                    <Img site={site} id={s.image} sizes="(max-width: 640px) 100vw, (max-width: 960px) 50vw, 400px" />
-                  </figure>
-                  <div class="txt">
-                    <h3>{s.title}</h3>
-                    <p>{s.summary}</p>
-                    <button type="button" class="more" data-service={i} aria-haspopup="dialog">
-                      Learn more<span class="sr-only"> about {s.title}</span>
-                    </button>
-                  </div>
-                  <template data-service-body={i}>
-                    {m && <img class="svc-modal-img" src={urlAtLeast(m, 960)} alt={m.alt} />}
-                    <div class="svc-modal-copy">
-                      <span class="eyebrow">Service</span>
-                      <h2 class="h2">{s.title}</h2>
-                      <Paras text={s.body || s.summary} />
-                      <div class="actions">
-                        <a class="btn btn-gold" href="/#contact" data-close-service>
-                          Discuss this service
-                        </a>
-                        {hasRelated && (
-                          <a class="btn btn-line" href="/#projects" data-show-category={s.category} data-close-service>
-                            See {categoryLabel(s.category).toLowerCase()}
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </template>
-                </article>
-              );
-            })}
-          </div>
+          <ServiceGrid site={site} items={visibleServices} />
         </div>
         <dialog class="svc-modal" aria-label="Service details">
           <button type="button" class="svc-modal-close" aria-label="Close">
@@ -169,10 +119,21 @@ export function HomePage({ site, category, contact }: { site: Site; category: st
       <section class="section white" id="projects">
         <div class="wrap">
           <div class="section-head">
-            <span class="eyebrow">Projects &amp; gallery</span>
+            <span class="eyebrow">Projects</span>
             <h2 class="h2">{projects.heading}</h2>
+            {projects.intro && <p class="lede">{projects.intro}</p>}
           </div>
-          <Gallery site={site} items={visibleProjects} initial={initial} chips="home" />
+          <MajorProjects site={site} items={majorProjects} />
+          {galleryPhotos.length > 0 && (
+            <div class="gallery-block">
+              <div class="section-head">
+                <span class="eyebrow">Gallery</span>
+                <h3 class="h2">{projects.gallery_heading}</h3>
+                {projects.gallery_intro && <p class="lede">{projects.gallery_intro}</p>}
+              </div>
+              <Gallery site={site} items={galleryPhotos} />
+            </div>
+          )}
         </div>
       </section>
 
@@ -217,6 +178,116 @@ export function HomePage({ site, category, contact }: { site: Site; category: st
 
       <ContactSection site={site} state={contact} />
     </Layout>
+  );
+}
+
+/** Seven cards fill a 4-column grid when the first spans two columns (2+1+1, then 4); other counts
+ *  get the column count and lead card that leave no gaps where possible. */
+function gridLayout(n: number): { cols: 3 | 4; wideLead: boolean } {
+  if (n % 3 === 0) return { cols: 3, wideLead: false };
+  if (n % 4 === 0) return { cols: 4, wideLead: false };
+  if ((n + 1) % 4 === 0) return { cols: 4, wideLead: true };
+  if ((n + 1) % 3 === 0) return { cols: 3, wideLead: true };
+  return { cols: 3, wideLead: false };
+}
+
+function ServiceGrid({ site, items }: { site: Site; items: Service[] }) {
+  const { cols, wideLead } = gridLayout(items.length);
+  return (
+    <div class={`services-grid cols-${cols}${wideLead ? ' wide-lead' : ''}`}>
+      {items.map((s, i) => {
+        const m = site.media.get(s.image);
+        return (
+          <article class="svc">
+            <figure>
+              <Img site={site} id={s.image} sizes={i === 0 && wideLead ? '(max-width: 640px) 100vw, 620px' : '(max-width: 640px) 100vw, (max-width: 960px) 50vw, 310px'} />
+            </figure>
+            <div class="txt">
+              <h3>{s.title}</h3>
+              <p>{s.summary}</p>
+              <button type="button" class="more" data-service={i} aria-haspopup="dialog">
+                Learn more<span class="sr-only"> about {s.title}</span>
+              </button>
+            </div>
+            <template data-service-body={i}>
+              {m && <img class="svc-modal-img" src={urlAtLeast(m, 960)} alt={m.alt} />}
+              <div class="svc-modal-copy">
+                <span class="eyebrow">Service</span>
+                <h2 class="h2">{s.title}</h2>
+                <Paras text={s.body || s.summary} />
+                <div class="actions">
+                  <a class="btn btn-gold" href="/#contact" data-close-service>
+                    Discuss this service
+                  </a>
+                </div>
+              </div>
+            </template>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+const STATUS_LABEL: Record<string, string> = { completed: 'Completed', 'in-progress': 'In progress' };
+
+function ProjectMeta({ p }: { p: MajorProject }) {
+  return (
+    <>
+      <div class="mp-head">
+        <h3>{p.name}</h3>
+        {p.status && <span class={`status status-${p.status}`}>{STATUS_LABEL[p.status]}</span>}
+      </div>
+      {p.description && <p>{p.description}</p>}
+      {p.link && (
+        <a class="text-link" href={safeHref(p.link)} target="_blank" rel="noopener">
+          Visit website<span class="sr-only"> of {p.name} (opens in a new tab)</span>
+        </a>
+      )}
+    </>
+  );
+}
+
+/** Projects with a photo as large cards (with the client's logo if there is one); the rest as logo cards. */
+function MajorProjects({ site, items }: { site: Site; items: MajorProject[] }) {
+  const withPhoto = items.filter((p) => site.media.has(p.photo));
+  const logoOnly = items.filter((p) => !site.media.has(p.photo));
+  return (
+    <>
+      {withPhoto.length > 0 && (
+        <div class={`mp-grid count-${Math.min(withPhoto.length, 3)}`}>
+          {withPhoto.map((p) => (
+            <article class="mp-card">
+              <figure>
+                <Img site={site} id={p.photo} sizes="(max-width: 640px) 100vw, (max-width: 960px) 50vw, 400px" alt={`${p.name}: project photo`} />
+              </figure>
+              <div class="mp-body">
+                {site.media.has(p.logo) && (
+                  <span class="mp-logo">
+                    <Img site={site} id={p.logo} sizes="200px" alt={`${p.name} logo`} />
+                  </span>
+                )}
+                <ProjectMeta p={p} />
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+      {logoOnly.length > 0 && (
+        <div class="mp-logos">
+          {logoOnly.map((p) => (
+            <article class="mp-logo-card">
+              <span class="mp-logo mp-logo-lg">
+                {site.media.has(p.logo) ? <Img site={site} id={p.logo} sizes="260px" alt={`${p.name} logo`} /> : <span class="mp-initial">{p.name}</span>}
+              </span>
+              <div class="mp-body">
+                <ProjectMeta p={p} />
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 

@@ -76,7 +76,7 @@ async function html(c: Ctx, el: unknown, status: 200 | 400 | 404 = 200) {
 }
 
 app.get('/', async (c) =>
-  html(c, <HomePage site={await site(c)} category={c.req.query('category') ?? ''} contact={{ sent: c.req.query('sent') === '1', errors: [], values: EMPTY_ENQUIRY }} />),
+  html(c, <HomePage site={await site(c)} contact={{ sent: c.req.query('sent') === '1', errors: [], values: EMPTY_ENQUIRY }} />),
 );
 
 // The site used to have separate pages; their addresses now lead to the matching section.
@@ -84,10 +84,7 @@ const moved = (target: string) => (c: Ctx) => c.redirect(target, 301);
 app.get('/about', moved('/#about'));
 app.get('/services', moved('/#services'));
 app.get('/services/:slug', moved('/#services'));
-app.get('/projects', (c) => {
-  const cat = c.req.query('category');
-  return c.redirect(cat && /^[a-z]+$/.test(cat) ? `/?category=${cat}#projects` : '/#projects', 301);
-});
+app.get('/projects', moved('/#projects'));
 app.get('/contact', (c) => c.redirect(c.req.query('sent') === '1' ? '/?sent=1#contact' : '/#contact', 301));
 
 app.post('/contact', async (c) => {
@@ -114,7 +111,7 @@ app.post('/contact', async (c) => {
     const ok = await verifyTurnstile(c.env.TURNSTILE_SECRET!, String(form.get('cf-turnstile-response') ?? ''), clientIp(c.req.raw.headers));
     if (!ok) errors.push('The security check failed. Please try again.');
   }
-  if (errors.length) return html(c, <HomePage site={s} category="" contact={{ sent: false, errors, values }} />, 400);
+  if (errors.length) return html(c, <HomePage site={s} contact={{ sent: false, errors, values }} />, 400);
 
   const row = await c.env.DB.prepare(
     'INSERT INTO enquiries (name, phone, email, city, project_type, message) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',

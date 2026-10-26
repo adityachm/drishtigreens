@@ -13,67 +13,83 @@ export const DEFAULTS: Docs = {
     consult_line: 'For site consultation, call',
     notify_emails: [],
     service_areas: ['Bengaluru', 'Karnataka', 'Hyderabad', 'Mumbai', 'Delhi', 'Across India'],
-    logo: '',
+    logo: 'seed-16',
     tagline: 'Bringing Nature to Life',
     footer_blurb:
       'Landscape design, horticulture and nursery expertise across Bengaluru, Hyderabad, Mumbai, Delhi and other parts of India.',
     footer_line: 'Rooted in nature. Designed for life.',
   },
 
+
   home: {
-    seo_title: 'Drishti Greens | Landscaping, Garden Design & Nursery',
+    seo_title: 'Drishti Greens | Landscaping, Forest Creation & Tree Relocation',
     seo_description:
-      'Drishti Greens creates thoughtful landscapes, villa gardens, resort greens, public parks and horticultural spaces, with over 10 years of experience.',
+      'Forest creation and carbon credit projects, mature tree relocation, and landscaping for resorts, parks, villas and interiors. Over 10 years of experience.',
     hero: [
       {
-        image: 'seed-06',
-        eyebrow: 'Landscape design · Horticulture · Nursery',
-        title: 'Bringing Nature to Life',
-        text: 'Landscape design, horticulture and nursery expertise for beautiful, functional and enduring green spaces.',
+        image: 'seed-17',
+        eyebrow: '',
+        title: 'Carbon Credit Projects',
+        text: 'Creating thriving forests through native tree plantation, ecological restoration and sustainable green-space development, while supporting forest creation and carbon credit projects for a greener future.',
         primary_label: 'Discuss your project',
         primary_link: '/#contact',
-        secondary_label: 'Explore our work',
-        secondary_link: '/#projects',
+        secondary_label: 'Our services',
+        secondary_link: '/#services',
       },
       {
-        image: 'seed-09',
-        eyebrow: 'Resorts, estates & large layouts',
-        title: 'A green welcome along every path',
-        text: 'Cohesive green environments with pathways, lawns, palms, ornamental planting and gathering spaces.',
-        primary_label: 'View our work',
-        primary_link: '/#projects',
-        secondary_label: '',
-        secondary_link: '',
-      },
-      {
-        image: 'seed-02',
-        eyebrow: 'Public parks & community landscapes',
-        title: 'Open spaces for everyone',
-        text: 'Accessible pathways, open lawns, shade trees and layered planting that make shared outdoor spaces inviting.',
-        primary_label: 'Request a quote',
+        image: 'seed-18',
+        eyebrow: '',
+        title: 'Mature Tree Relocation',
+        text: 'We bring life to green spaces through expert tree transplantation, achieving a 99% regrowth success rate and creating greener, more sustainable environments.',
+        primary_label: 'Discuss your project',
         primary_link: '/#contact',
-        secondary_label: '',
-        secondary_link: '',
+        secondary_label: 'Our services',
+        secondary_link: '/#services',
+      },
+      {
+        image: 'seed-19',
+        eyebrow: '',
+        title: 'Large Parks, Resorts & Beachside Landscaping',
+        text: 'At Drishti Greens, we create beautiful parks, resort landscapes and beachside green spaces featuring lush lawns, landscaped gardens and elegant walking pathways.',
+        primary_label: 'Discuss your project',
+        primary_link: '/#contact',
+        secondary_label: 'Our services',
+        secondary_link: '/#services',
+      },
+      {
+        image: 'seed-20',
+        eyebrow: '',
+        title: 'Villa Projects',
+        text: 'We create beautiful villa landscapes with customised gardens, lush lawns, elegant pathways and carefully selected plants to complement your home and lifestyle.',
+        primary_label: 'Discuss your project',
+        primary_link: '/#contact',
+        secondary_label: 'Our services',
+        secondary_link: '/#services',
+      },
+      {
+        image: 'seed-21',
+        eyebrow: '',
+        title: 'Indoor Projects',
+        text: 'Bringing interiors to life with beautiful indoor plants and customised greenery that create fresh, welcoming and naturally elegant spaces.',
+        primary_label: 'Discuss your project',
+        primary_link: '/#contact',
+        secondary_label: 'Our services',
+        secondary_link: '/#services',
       },
     ],
     intro_statement: 'Rooted in nature. Designed for life.',
     intro_body:
-      'From private villa gardens and resort landscapes to public parks and large-layout developments, Drishti Greens combines practical experience with a genuine connection to nature. We create outdoor spaces that feel welcoming, grow beautifully and complement their surroundings.',
+      'At Drishti Greens, nature is more than our profession — it is a part of who we are. With both partners hailing from the beautiful Western Ghats, we share a deep-rooted love for greenery and a personal commitment to preserving nature.\n\nFrom designing beautiful gardens and landscapes to creating forests through native tree plantation, afforestation and ecological restoration, we strive to bring people closer to nature. We also support forest creation and carbon credit projects, helping businesses explore sustainable environmental initiatives for a greener future.',
   },
 
   about: {
     about_heading: 'We bring spaces to life with nature',
-    about_body:
-      'At Drishti Greens, we believe every space has the potential to become something extraordinary when nature meets thoughtful design.\n\nWith over 10 years of industry experience, we transform ordinary outdoor spaces into vibrant, functional and naturally beautiful landscapes. From residential gardens and large-scale layouts to commercial green spaces, vertical gardens and specialised horticulture, we bring ideas to life through creativity, expertise and a genuine passion for nature.\n\nOur experience spans Bengaluru, Karnataka, Hyderabad, Mumbai, Delhi and other parts of India. Wherever we work, our approach remains the same: understand the space, work with nature and create landscapes that grow beautifully over time.\n\nFor us, landscaping isn’t just about planting trees or adding greenery. It’s about creating spaces that feel good, look beautiful and make everyday life a little greener.',
-    about_quote: 'Thoughtfully designed. Naturally beautiful. Built to grow.',
-    about_image_main: 'seed-11',
-    about_image_inset: 'seed-12',
+    about_image: 'seed-22',
     stat_value: '10+',
     stat_label: 'Years of experience',
-    philosophy_heading: 'A little greener. A lot more life.',
-    philosophy_body:
-      'Nature has always been a part of who we are. Both our founders grew up surrounded by nature, developing a deep personal connection with plants, trees and the outdoors. That connection continues to inspire everything we do at Drishti Greens.\n\nWe believe great landscaping is about more than appearances. It’s about understanding the land, choosing the right plants, working with natural materials and creating an environment that can thrive for years to come.\n\nEvery site is different. Every plant has its own needs. Every landscape has a story waiting to unfold. That’s why we combine practical experience, horticultural knowledge and thoughtful execution to create spaces that feel natural, look beautiful and grow with time.\n\nOur goal is simple: create landscapes that people love and nature can thrive in.',
-    philosophy_image: 'seed-15',
+    about_body:
+      'At Drishti Greens, both our partners hail from the beautiful Western Ghats, where a deep connection with nature and a love for greenery have shaped our vision. We believe every space has the potential to become extraordinary when nature meets thoughtful design.\n\nWith over 10 years of industry experience, we create beautiful, functional and sustainable green spaces that bring people closer to nature. From residential gardens, villa landscapes and large-scale developments to commercial landscapes, vertical gardens and specialised horticulture, we combine creativity, expertise and a genuine passion for greenery to bring every vision to life.\n\nOur expertise also extends to forest creation, native tree plantation, afforestation and ecological restoration, helping restore natural ecosystems and build greener landscapes. Through our carbon credit projects, we support sustainability initiatives that contribute to a more environmentally responsible future.\n\nOur experience spans Bengaluru and other parts of Karnataka, Hyderabad, Mumbai, Delhi and locations across India. Every project begins with understanding the space, respecting its natural character and creating landscapes that flourish beautifully over time.\n\nFor us, landscaping is more than planting trees or adding greenery. It is about creating spaces that inspire, restore and enrich everyday life while contributing to a healthier planet. Through thoughtful design and a deep-rooted love for nature, we aim to make every space greener, more inviting and more connected to the natural world.',
+    about_quote: '',
     why_heading: 'Practical experience, a genuine love of plants',
     why_items: [
       {
@@ -103,149 +119,82 @@ export const DEFAULTS: Docs = {
   },
 
   services: {
-    heading: 'Landscaping & horticulture services',
+    heading: 'Landscaping, horticulture, forest creation & carbon credit projects',
     items: [
       {
         visible: true,
-        title: 'Landscape Architecture & Design',
-        image: 'seed-03',
+        title: 'Forest Creation & Carbon Credit Projects',
+        image: 'seed-17',
         summary:
-          'We listen to your vision and requirements, develop a customised landscape design, and execute it with care, creativity and attention to detail.',
+          'Native tree plantation, afforestation and ecological restoration that establish thriving forests and support carbon credit projects for a greener future.',
         body:
-          'We listen to your vision and requirements, develop a customised landscape design, and execute it with care, creativity and attention to detail.\n\nFrom beautiful home gardens to expansive residential layouts and commercial developments, we transform open spaces into thoughtfully designed landscapes that balance beauty, functionality and nature.',
-        category: 'parks',
+          'At Drishti Greens, we focus on forest creation and carbon credit projects, developing sustainable green initiatives that contribute to a greener future. Through native tree plantation, afforestation and ecological restoration, we help establish thriving forests, restore natural ecosystems and enhance carbon sequestration potential.\n\nOur focus is on supporting projects that combine environmental conservation with long-term sustainability, enabling businesses and landowners to explore carbon credit opportunities while contributing to biodiversity, climate action and a healthier planet.',
       },
       {
         visible: true,
-        title: 'Villa & Residential Gardens',
-        image: 'seed-01',
-        summary:
-          'From entrance pathways and lawn areas to private courtyards and vertical gardens, we shape outdoor spaces that feel connected to the home.',
+        title: 'Landscape Design & Development',
+        image: 'seed-23',
+        summary: 'Customised landscape designs tailored to your requirements, preferences and space, from concept development to thoughtful planning.',
         body:
-          'From entrance pathways and lawn areas to private courtyards and vertical gardens, we shape outdoor spaces that feel connected to the home and easy to enjoy.',
-        category: 'villa',
+          "At Drishti Greens, we create customised landscape designs tailored to each client's unique requirements, preferences and available space. From concept development to thoughtful planning, we combine creativity, natural elements and practical design to transform your vision into beautiful, functional and sustainable green spaces.\n\nEvery design is carefully crafted to complement its surroundings and reflect your individual style.",
       },
       {
         visible: true,
-        title: 'Resorts, Estates & Large Layouts',
-        image: 'seed-07',
-        summary:
-          'Cohesive green environments with pathways, lawns, palms, ornamental planting and gathering spaces that make a welcoming first impression.',
+        title: 'Mature Tree Relocation',
+        image: 'seed-24',
+        summary: 'Careful relocation of mature trees with the right equipment and expert handling, achieving a 99% relocation success rate.',
         body:
-          'We plan cohesive green environments with pathways, lawns, palms, ornamental planting and gathering spaces that create a welcoming first impression.',
-        category: 'resorts',
+          'At Drishti Greens, we specialise in the careful relocation of mature trees using appropriate equipment and expert handling to protect root systems and promote healthy regrowth.\n\nOur approach preserves established greenery, accelerates landscape development and achieves a 99% tree relocation success rate.',
       },
       {
         visible: true,
-        title: 'Public Parks & Community Landscapes',
-        image: 'seed-04',
-        summary: 'Accessible pathways, open lawns, shade trees and layered planting that create inviting shared outdoor spaces.',
+        title: 'Resorts, Estates, Parks & Large Layouts',
+        image: 'seed-25',
+        summary: 'Lush lawns, landscaped gardens, walking pathways, vibrant plantations and peaceful recreational areas for large outdoor spaces.',
         body:
-          'We bring together accessible pathways, open lawns, shade trees and layered planting to create inviting shared outdoor spaces.',
-        category: 'parks',
+          'At Drishti Greens, we design and develop beautiful, sustainable outdoor spaces that blend natural beauty with thoughtful planning.\n\nFrom lush green lawns and landscaped gardens to elegant walking pathways, vibrant plantations and peaceful recreational areas, we create inviting environments that enhance everyday living and bring people closer to nature.',
       },
       {
         visible: true,
-        title: 'Vertical Gardens & Compact Spaces',
-        image: 'seed-05',
-        summary: 'Living walls and carefully planned planting introduce greenery where ground space is limited.',
+        title: 'Plant Nursery & Specimen Trees',
+        image: 'seed-26',
+        summary: 'Quality plants, ornamental palms, mature trees and specimen plants for landscaping projects of every scale.',
         body:
-          'Living walls and carefully planned planting introduce greenery where ground space is limited.\n\nNo matter the size of the space, there’s always room for green. We create customised indoor gardens, terrace landscapes, balcony gardens and vertical green walls that bring nature into modern living and working environments.',
-        category: 'vertical',
+          'At Drishti Greens, we nurture and source a diverse selection of quality plants, ornamental palms, mature trees and specimen plants for landscaping projects of every scale.\n\nFrom elegant palms to carefully grown avenue trees and lush green shrubs, our collection helps bring character, structure and lasting beauty to outdoor spaces. We focus on healthy plant growth and selecting the right greenery to complement each landscape design.',
       },
       {
         visible: true,
-        title: 'Mature Trees & Palms',
-        image: 'seed-14',
-        summary: 'We source and work with established trees and palms to add scale, shade and structure to landscape projects.',
-        body: 'We source and work with established trees and palms to add scale, shade and structure to landscape projects.',
-        category: 'trees',
+        title: 'Vertical Gardens',
+        image: 'seed-27',
+        summary: 'Customised living walls that turn plain walls into vibrant green landscapes for homes, offices and outdoor spaces.',
+        body:
+          'At Drishti Greens, we transform plain walls into vibrant living landscapes with customised vertical garden solutions tailored to your space and design preferences.\n\nBy combining carefully selected plants, creative layouts and thoughtful planning, we bring natural beauty to residential, commercial and outdoor environments. Our vertical gardens make efficient use of space, enhance visual appeal and introduce refreshing greenery into modern architecture.',
       },
       {
         visible: true,
-        title: 'Mature-Tree Relocation',
-        image: 'seed-13',
-        summary:
-          'Assessment, root-ball preparation, lifting, transport, replanting and aftercare, planned around site conditions.',
+        title: 'Indoor Landscaping & Greenery',
+        image: 'seed-28',
+        summary: 'Plant arrangements, elegant planters, green walls and indoor gardens for homes, offices, hotel lobbies and commercial spaces.',
         body:
-          'Tree relocation requires planning and careful handling. We coordinate assessment, root-ball preparation, lifting, transport, replanting and aftercare according to site conditions.\n\nEvery mature tree has value. We undertake specialised tree relocation and transplantation, with careful attention to root protection, site conditions and post-transplant care, wherever feasible.',
-        category: 'trees',
-      },
-      {
-        visible: true,
-        title: 'Nursery & Specimen Plants',
-        image: 'seed-15',
-        summary:
-          'Established trees, palms, topiary and specimen plants selected to suit the character and scale of a landscape.',
-        body:
-          'Our plant offering includes established trees, palms, topiary and specimen plants selected to suit the character and scale of a landscape.\n\nOur passion for plants goes beyond landscaping. We nurture a diverse range of plant varieties, with a special interest in ferns and orchids, using growing methods suited to their individual needs.',
-        category: 'nursery',
-      },
-      {
-        visible: true,
-        title: 'Garden Development & Maintenance',
-        image: 'seed-08',
-        summary:
-          'Thoughtful planting, lawn care and ongoing attention help landscapes establish well and stay attractive as they mature.',
-        body:
-          'Thoughtful planting, lawn care and ongoing attention help landscapes establish well and remain attractive as they mature.\n\nHealthy gardens start with the right care. From soil preparation and plant selection to planting, maintenance and horticultural support, we help green spaces grow, thrive and flourish.',
-        category: 'villa',
-      },
-      // From the "About Us" document. Hidden until the client confirms them and adds photos.
-      {
-        visible: false,
-        title: 'Natural Stone & Pebble Landscaping',
-        image: '',
-        summary:
-          'Stones, boulders, decorative pebbles and greenery combined to give outdoor spaces character, depth and a natural look.',
-        body:
-          'Natural textures make a landscape stand out. We combine stones, boulders, decorative pebbles and greenery to create outdoor spaces with character, depth and a distinctive natural aesthetic.',
-        category: '',
-      },
-      {
-        visible: false,
-        title: 'Rock Gardens & Natural Landscapes',
-        image: '',
-        summary: 'Rock gardens and organic landscapes that bring together plants, stones, textures and landforms.',
-        body:
-          'Inspired by the beauty of the natural world, we design rock gardens and organic landscapes that bring together plants, stones, textures and landforms in a harmonious way.',
-        category: '',
-      },
-      {
-        visible: false,
-        title: 'Reflexology & Wellness Gardens',
-        image: '',
-        summary: 'Reflexology pathways, acupressure walking stones and natural elements for peaceful outdoor experiences.',
-        body:
-          'Spaces should do more than look good. They should feel good, too. Our wellness gardens feature reflexology pathways, acupressure walking stones and natural elements designed to create peaceful outdoor experiences.',
-        category: '',
+          'At Drishti Greens, we transform indoor spaces with thoughtfully designed plant arrangements, elegant planters, green walls and natural indoor gardens.\n\nFrom residential interiors to corporate offices, hotel lobbies and commercial spaces, we create refreshing, welcoming environments that blend greenery with modern architecture.',
       },
     ],
   },
-
 
   projects: {
-    heading: 'Our work',
+    heading: 'Our major projects',
+    intro: 'A selection of our major projects, completed and in progress.',
     items: [
-      { visible: true, featured: true, category: 'villa', image: 'seed-01', title: 'A Thoughtfully Designed Welcome', caption: 'A refined entrance pathway combining natural stone, dark pebbles, ornamental planting and subtle lighting to create a welcoming transition from architecture to garden.' },
-      { visible: true, featured: false, category: 'villa', image: 'seed-06', title: 'A Calm Tropical Retreat', caption: 'A lawn framed by palms, clipped shrubs and stepping stones creates a relaxed garden setting with a strong connection to nature.' },
-      { visible: true, featured: false, category: 'villa', image: 'seed-08', title: 'Careful Planting, Lasting Beauty', caption: 'Layered planting, a healthy lawn and a green wall demonstrate the attention to detail that helps residential gardens mature beautifully.' },
-      { visible: true, featured: false, category: 'villa', image: 'seed-10', title: 'A Garden That Comes Alive After Dark', caption: 'Warm lighting, mature trees and illuminated pathways extend the garden experience into the evening.' },
-      { visible: true, featured: true, category: 'parks', image: 'seed-02', title: 'Open Spaces for Everyone', caption: 'Curving pathways, a circular lawn and layered planting create an inviting public landscape for walking, gathering and enjoying the outdoors.' },
-      { visible: true, featured: false, category: 'parks', image: 'seed-03', title: 'Pathways Framed by Greenery', caption: 'Curved paved walkways and carefully edged planting beds bring structure, shade and visual interest to shared outdoor spaces.' },
-      { visible: true, featured: false, category: 'parks', image: 'seed-04', title: 'Colour, Texture and Seasonal Interest', caption: 'Contrasting foliage, well-defined beds and mature shade trees add depth and character to a public garden.' },
-      { visible: true, featured: true, category: 'resorts', image: 'seed-07', title: 'Landscapes Designed for Escape', caption: 'A manicured lawn, ornamental borders and a pergola create a composed outdoor setting suited to resorts, estates and leisure properties.' },
-      { visible: true, featured: false, category: 'resorts', image: 'seed-09', title: 'A Green Welcome Along Every Path', caption: 'A straight stone walkway with symmetrical planting establishes a clear, welcoming route through a tropical property.' },
-      { visible: true, featured: true, category: 'vertical', image: 'seed-05', title: 'Green Living, Even in Compact Spaces', caption: 'A vertical garden brings a living layer of greenery to a compact residential courtyard, complemented by a simple lawn and stepping-stone path.' },
-      { visible: true, featured: true, category: 'trees', image: 'seed-13', title: 'From Nursery to New Home', caption: 'Our tree-moving work focuses on careful lifting, secure handling and coordinated placement at the new site.' },
-      { visible: true, featured: false, category: 'trees', image: 'seed-11', title: 'Moving Mature Trees with Care', caption: 'Specialist handling and careful coordination help move established trees while prioritising root-ball protection and safe replanting.' },
-      { visible: true, featured: false, category: 'trees', image: 'seed-14', title: 'Tropical Character at Scale', caption: 'Mature palms create height, rhythm and a distinctive tropical identity in resorts, villas and large landscape projects.' },
-      { visible: true, featured: false, category: 'nursery', image: 'seed-12', title: 'Mature Trees for Established Landscapes', caption: 'A nursery selection of established trees offers immediate structure, shade and scale for landscape development projects.' },
-      { visible: true, featured: true, category: 'nursery', image: 'seed-15', title: 'Statement Plants with Natural Character', caption: 'Sculpted topiary and specimen plants bring form, texture and a finished look to entrances, courtyards and formal gardens.' },
+      { visible: true, name: 'Pushkar Cottages', status: '', photo: 'seed-33', logo: 'seed-29', description: '', link: 'https://pushkarcottages.com/' },
+      { visible: true, name: 'Dandeli River Inn Resort', status: '', photo: 'seed-35', logo: '', description: '', link: '' },
+      { visible: true, name: 'Tata Hitachi', status: '', photo: 'seed-36', logo: 'seed-32', description: '', link: '' },
+      { visible: true, name: 'Bharat Petroleum Corporation Limited', status: '', photo: '', logo: 'seed-30', description: '', link: '' },
+      { visible: true, name: 'HP Gas', status: '', photo: '', logo: 'seed-31', description: '', link: '' },
     ],
+    gallery_heading: 'New projects',
+    gallery_intro: '',
+    gallery: [],
   },
-
-
   approach: {
     heading: 'From first visit to long-term growth',
     steps: [

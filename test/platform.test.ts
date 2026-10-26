@@ -128,7 +128,7 @@ describe('app', () => {
       ['/services', '/#services'],
       ['/services/tree-relocation', '/#services'],
       ['/projects', '/#projects'],
-      ['/projects?category=trees', '/?category=trees#projects'],
+      ['/projects?category=trees', '/#projects'],
       ['/contact', '/#contact'],
     ];
     for (const [from, to] of moved) {

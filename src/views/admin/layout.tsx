@@ -16,7 +16,7 @@ function Head({ title, v }: { title: string; v: string }) {
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta name="robots" content="noindex, nofollow" />
       <title>{title} · Drishti Greens admin</title>
-      <link rel="icon" href={`/static/favicon.svg?v=${v}`} type="image/svg+xml" />
+      <link rel="icon" href={`/static/favicon.png?v=${v}`} type="image/png" />
       <link rel="stylesheet" href={`/static/admin.css?v=${v}`} />
       <script src={`/static/admin.js?v=${v}`} defer></script>
     </head>

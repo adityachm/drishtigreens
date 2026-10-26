@@ -1,12 +1,9 @@
 import type { Field, Option, Section } from './fields.ts';
 
-export const PROJECT_CATEGORIES: Option[] = [
-  { value: 'villa', label: 'Villa & Residential Gardens' },
-  { value: 'parks', label: 'Public Parks' },
-  { value: 'resorts', label: 'Resorts & Layouts' },
-  { value: 'vertical', label: 'Vertical Gardens' },
-  { value: 'trees', label: 'Mature Trees & Relocation' },
-  { value: 'nursery', label: 'Nursery & Specimen Plants' },
+export const PROJECT_STATUSES: Option[] = [
+  { value: '', label: 'Don’t show a status' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'in-progress', label: 'In progress' },
 ];
 
 export const WHY_ICONS: Option[] = [
@@ -61,13 +58,9 @@ export type About = {
   about_heading: string;
   about_body: string;
   about_quote: string;
-  about_image_main: string;
-  about_image_inset: string;
+  about_image: string;
   stat_value: string;
   stat_label: string;
-  philosophy_heading: string;
-  philosophy_body: string;
-  philosophy_image: string;
   why_heading: string;
   why_items: WhyItem[];
   care_title: string;
@@ -79,20 +72,29 @@ export type Service = {
   summary: string;
   body: string;
   image: string;
-  category: string;
   visible: boolean;
 };
 export type Services = { heading: string; items: Service[] };
 
-export type Project = {
-  title: string;
-  caption: string;
-  category: string;
-  image: string;
-  featured: boolean;
+/** A major project (client). Projects with a photo show as large cards, the rest as logo cards. */
+export type MajorProject = {
+  name: string;
+  status: '' | 'completed' | 'in-progress';
+  photo: string;
+  logo: string;
+  description: string;
+  link: string;
   visible: boolean;
 };
-export type Projects = { heading: string; items: Project[] };
+export type GalleryPhoto = { image: string; caption: string; visible: boolean };
+export type Projects = {
+  heading: string;
+  intro: string;
+  items: MajorProject[];
+  gallery_heading: string;
+  gallery_intro: string;
+  gallery: GalleryPhoto[];
+};
 
 export type Approach = { heading: string; steps: TitleText[] };
 
@@ -176,27 +178,18 @@ export const DOCS: DocDef[] = [
   {
     key: 'about',
     title: 'About',
-    description: 'Company story, philosophy and “Why choose us”.',
+    description: 'Company story and “Why choose us”.',
     publicPath: '/#about',
     sections: [
       {
-        title: 'Our story',
+        title: 'About us',
         fields: [
           { type: 'text', key: 'about_heading', label: 'Heading' },
-          { type: 'textarea', key: 'about_body', label: 'Text', rows: 10, help: paraHelp },
-          { type: 'text', key: 'about_quote', label: 'Quote' },
-          { type: 'image', key: 'about_image_main', label: 'Main photo (portrait works best)' },
-          { type: 'image', key: 'about_image_inset', label: 'Small overlapping photo' },
-          { type: 'text', key: 'stat_value', label: 'Highlight number', max: 10, help: 'For example 10+. Leave empty to hide.' },
+          { type: 'image', key: 'about_image', label: 'Wide photo', help: 'Shown wide above the text. Landscape photos work best.' },
+          { type: 'text', key: 'stat_value', label: 'Highlight number', max: 10, help: 'Shown on the photo, for example 10+. Leave empty to hide.' },
           { type: 'text', key: 'stat_label', label: 'Highlight label', max: 40 },
-        ],
-      },
-      {
-        title: 'Philosophy',
-        fields: [
-          { type: 'text', key: 'philosophy_heading', label: 'Heading' },
-          { type: 'textarea', key: 'philosophy_body', label: 'Text', rows: 10, help: paraHelp },
-          { type: 'image', key: 'philosophy_image', label: 'Photo' },
+          { type: 'textarea', key: 'about_body', label: 'Text', rows: 14, help: paraHelp },
+          { type: 'text', key: 'about_quote', label: 'Closing line (optional)' },
         ],
       },
       {
@@ -228,7 +221,7 @@ export const DOCS: DocDef[] = [
     description: 'The service cards. “Learn more” on a card opens its full description.',
     publicPath: '/#services',
     sections: [
-      { title: 'Heading', fields: [{ type: 'text', key: 'heading', label: 'Heading above the cards' }] },
+      { title: 'Heading', fields: [{ type: 'text', key: 'heading', label: 'Heading above the cards', max: 120 }] },
       {
         title: 'Services',
         help: 'Untick "Show on website" to hide a service without deleting it.',
@@ -246,12 +239,6 @@ export const DOCS: DocDef[] = [
               { type: 'image', key: 'image', label: 'Photo' },
               { type: 'textarea', key: 'summary', label: 'Short description (card)', rows: 3, max: 300 },
               { type: 'textarea', key: 'body', label: 'Full description (opens from “Learn more”)', rows: 8, help: paraHelp },
-              {
-                type: 'select',
-                key: 'category',
-                label: '“See related projects” shows',
-                options: [{ value: '', label: 'No related projects button' }, ...PROJECT_CATEGORIES],
-              },
             ],
           },
         ],
@@ -261,27 +248,51 @@ export const DOCS: DocDef[] = [
   {
     key: 'projects',
     title: 'Projects',
-    description: 'The project gallery, grouped by category. Featured projects show first.',
+    description: 'Major projects, completed and in progress, and a gallery of new project photos.',
     publicPath: '/#projects',
     sections: [
-      { title: 'Heading', fields: [{ type: 'text', key: 'heading', label: 'Heading above the gallery' }] },
       {
-        title: 'Projects',
+        title: 'Major projects',
+        help: 'Projects with a photo show as large cards; the others show their logo.',
         fields: [
+          { type: 'text', key: 'heading', label: 'Heading' },
+          { type: 'textarea', key: 'intro', label: 'Text', rows: 2, max: 300 },
           {
             type: 'list',
             key: 'items',
             label: 'Projects',
             itemLabel: 'Project',
-            titleKey: 'title',
+            titleKey: 'name',
+            max: 40,
+            fields: [
+              { type: 'checkbox', key: 'visible', label: 'Show on website' },
+              { type: 'text', key: 'name', label: 'Client or project name', required: true, max: 80 },
+              { type: 'select', key: 'status', label: 'Status', options: PROJECT_STATUSES },
+              { type: 'image', key: 'photo', label: 'Project photo' },
+              { type: 'image', key: 'logo', label: 'Client logo' },
+              { type: 'textarea', key: 'description', label: 'Short description (optional)', rows: 2, max: 300 },
+              { type: 'link', key: 'link', label: 'Website (optional)', placeholder: 'https://' },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Gallery of new projects',
+        help: 'Upload photos of new projects here. This part of the page appears once you add the first photo.',
+        fields: [
+          { type: 'text', key: 'gallery_heading', label: 'Heading' },
+          { type: 'textarea', key: 'gallery_intro', label: 'Text (optional)', rows: 2, max: 300 },
+          {
+            type: 'list',
+            key: 'gallery',
+            label: 'Photos',
+            itemLabel: 'Photo',
+            titleKey: 'caption',
             max: 200,
             fields: [
               { type: 'checkbox', key: 'visible', label: 'Show on website' },
-              { type: 'checkbox', key: 'featured', label: 'Featured (shown first)' },
               { type: 'image', key: 'image', label: 'Photo', required: true },
-              { type: 'select', key: 'category', label: 'Category', options: PROJECT_CATEGORIES },
-              { type: 'text', key: 'title', label: 'Title', required: true, max: 80 },
-              { type: 'textarea', key: 'caption', label: 'Caption', rows: 3, max: 400 },
+              { type: 'text', key: 'caption', label: 'Caption (optional)', max: 160 },
             ],
           },
         ],
