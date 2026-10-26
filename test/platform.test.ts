@@ -7,7 +7,7 @@ import app from '../src/index.tsx';
 import type { Bindings } from '../src/env.ts';
 import { migrate, openDb, type Db } from '../src/platform/db.ts';
 import { FileStorage } from '../src/platform/storage.ts';
-import { withForwardedProto } from '../src/platform/http.ts';
+import { httpsRedirect, withForwardedProto } from '../src/platform/http.ts';
 import { parseEnvFile } from '../src/platform/config.ts';
 import { hashPassword } from '../src/lib/password.ts';
 import { recordFailure, lockoutRemaining } from '../src/lib/auth.ts';
@@ -104,6 +104,14 @@ describe('file storage', () => {
 describe('config and proxy', () => {
   it('reads secrets files without expanding $', () => {
     expect(parseEnvFile('# note\nA=1\nB="x$y"\n bad line\nC=\'z\'')).toEqual({ A: '1', B: 'x$y', C: 'z' });
+  });
+
+  it('sends plain-HTTP visitors coming through Cloudflare to HTTPS, and leaves home-network requests alone', () => {
+    const viaCf = httpsRedirect(new Request('http://drishtigreens.com/admin/login?x=1', { headers: { 'x-forwarded-proto': 'http', 'cf-ray': 'abc' } }));
+    expect(viaCf?.status).toBe(301);
+    expect(viaCf?.headers.get('location')).toBe('https://drishtigreens.com/admin/login?x=1');
+    expect(httpsRedirect(new Request('http://drishtigreens.com/', { headers: { 'x-forwarded-proto': 'https', 'cf-ray': 'abc' } }))).toBeNull();
+    expect(httpsRedirect(new Request('http://192.168.1.40:8790/'))).toBeNull();
   });
 
   it('treats requests forwarded from HTTPS as HTTPS', () => {

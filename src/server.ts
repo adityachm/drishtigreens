@@ -10,7 +10,7 @@ import type { Bindings } from './env.ts';
 import { loadConfig } from './platform/config.ts';
 import { migrate, openDb } from './platform/db.ts';
 import { FileStorage } from './platform/storage.ts';
-import { withForwardedProto } from './platform/http.ts';
+import { httpsRedirect, withForwardedProto } from './platform/http.ts';
 import { mailerFromEnv } from './platform/smtp.ts';
 
 const cfg = loadConfig();
@@ -40,7 +40,7 @@ root.use('/static/*', async (c, next) => {
 root.use('/static/*', serveStatic({ root: cfg.publicDir }));
 root.route('/', app);
 
-const server = serve({ fetch: (req) => root.fetch(withForwardedProto(req), env), port: cfg.port, hostname: cfg.host }, (info) =>
+const server = serve({ fetch: (req) => httpsRedirect(req) ?? root.fetch(withForwardedProto(req), env), port: cfg.port, hostname: cfg.host }, (info) =>
   console.log(`Drishti Greens ${cfg.version} listening on http://${info.address}:${info.port}`),
 );
 

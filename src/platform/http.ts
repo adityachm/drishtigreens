@@ -12,3 +12,12 @@ export function withForwardedProto(req: Request): Request {
     ...(hasBody ? { duplex: 'half' } : {}),
   } as RequestInit);
 }
+
+/** A visitor who came through Cloudflare on plain HTTP is sent to HTTPS, so nothing (least of all the
+ *  admin password) travels unencrypted. Direct requests on the home network carry no X-Forwarded-Proto
+ *  and are left alone. */
+export function httpsRedirect(req: Request): Response | null {
+  if (req.headers.get('x-forwarded-proto') !== 'http' || !req.headers.get('cf-ray')) return null;
+  const url = 'https:' + req.url.slice(req.url.indexOf(':') + 1);
+  return new Response(null, { status: 301, headers: { Location: url } });
+}
