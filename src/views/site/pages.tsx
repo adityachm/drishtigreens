@@ -58,10 +58,12 @@ export function HomePage({ site, contact }: { site: Site; contact: ContactState 
         )}
       </section>
 
-      <section class={`intro section${site.media.has(h.intro_image) ? ' on-photo' : ''}`}>
-        {site.media.has(h.intro_image) && <Img site={site} id={h.intro_image} sizes="100vw" alt="" class="intro-bg" />}
+      <section class="intro section">
         <div class="wrap">
-          <h2 class="statement">{h.intro_statement}</h2>
+          <div class={`intro-visual${site.media.has(h.intro_image) ? ' has-photo' : ''}`}>
+            {site.media.has(h.intro_image) && <Img site={site} id={h.intro_image} sizes="(max-width: 960px) 100vw, 520px" alt="" />}
+            <h2 class="statement">{h.intro_statement}</h2>
+          </div>
           <div class="body">
             <Paras text={h.intro_body} />
             <div class="actions">

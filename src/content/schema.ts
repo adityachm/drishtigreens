@@ -164,7 +164,7 @@ export const DOCS: DocDef[] = [
         fields: [
           { type: 'text', key: 'intro_statement', label: 'Statement', max: 80 },
           { type: 'textarea', key: 'intro_body', label: 'Text', rows: 4, help: paraHelp },
-          { type: 'image', key: 'intro_image', label: 'Background photo', help: 'Shown behind the introduction under a dark green tint. Wide, calm photos work best.' },
+          { type: 'image', key: 'intro_image', label: 'Background photo', help: 'Shown on the left, behind the heading, softened with a light fade. Bright, calm photos work best.' },
         ],
       },
       {

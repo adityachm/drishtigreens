@@ -101,19 +101,19 @@ p { margin: 0; }
 @keyframes fill { to { transform: scaleX(1); } }
 
 /* Intro */
-.intro { background: var(--white); }
-.intro .wrap { display: grid; grid-template-columns: 5fr 7fr; gap: clamp(28px, 6vw, 96px); align-items: start; }
+.intro { background: var(--white); padding-block: clamp(48px, 6vw, 80px) clamp(40px, 5vw, 64px); }
+.intro .wrap { display: grid; grid-template-columns: 5fr 7fr; gap: clamp(28px, 5vw, 80px); align-items: start; }
 .intro .statement { font-size: clamp(30px, 3.6vw, 44px); color: var(--forest); text-transform: uppercase; letter-spacing: .02em; }
 .intro .body { display: grid; gap: 22px; color: var(--muted); min-width: 0; }
 .intro .body .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
-/* With a background photo: a deep-green tint keeps the text readable over the photo */
-.intro.on-photo { position: relative; overflow: hidden; background: var(--forest-2); padding-block: clamp(72px, 9vw, 120px); }
-.intro.on-photo .intro-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.intro.on-photo::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(20, 42, 30, .88) 0%, rgba(20, 42, 30, .74) 55%, rgba(20, 42, 30, .62) 100%); }
-.intro.on-photo .wrap { position: relative; z-index: 2; align-items: center; }
-.intro.on-photo .statement { color: var(--white); }
-.intro.on-photo .body { color: var(--on-dark); }
-.intro.on-photo .text-link { color: var(--white); border-bottom-color: var(--gold-soft); }
+/* The heading sits on a photo panel on the left; a light fade at the bottom keeps it readable */
+.intro .wrap { align-items: stretch; }
+.intro-visual { display: flex; align-items: center; min-width: 0; }
+.intro-visual.has-photo { position: relative; overflow: hidden; align-items: flex-end; min-height: clamp(280px, 30vw, 400px); background: var(--paper); }
+.intro-visual.has-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.intro-visual.has-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, .08) 0%, rgba(255, 255, 255, .45) 45%, rgba(255, 255, 255, .92) 100%); }
+.intro-visual.has-photo .statement { position: relative; z-index: 1; padding: clamp(20px, 3vw, 32px); font-size: clamp(26px, 2.7vw, 36px); }
+.intro .body { align-self: center; }
 
 /* Services */
 .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 2.4vw, 28px); }
@@ -262,7 +262,7 @@ dialog.lightbox button { grid-row: 1 / span 2; grid-column: 2; width: 44px; heig
 .notfound .actions { display: flex; flex-wrap: wrap; gap: 12px; }
 
 /* About */
-.about-sec { background: var(--white); padding-top: clamp(56px, 6vw, 80px); }
+.about-sec { background: var(--white); padding-top: clamp(24px, 2.5vw, 32px); }
 .about-sec .wrap { display: grid; gap: clamp(28px, 4vw, 44px); }
 .about-sec .section-head { margin-bottom: 0; }
 .about-photo { position: relative; margin: 0; }
