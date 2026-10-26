@@ -106,12 +106,12 @@ p { margin: 0; }
 .intro .statement { font-size: clamp(30px, 3.6vw, 44px); color: var(--forest); text-transform: uppercase; letter-spacing: .02em; }
 .intro .body { display: grid; gap: 22px; color: var(--muted); min-width: 0; }
 .intro .body .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
-/* The heading sits on a photo panel on the left; a light fade at the bottom keeps it readable */
+/* The heading sits at the top of a photo panel on the left; a light fade at the top keeps it readable */
 .intro .wrap { align-items: stretch; }
 .intro-visual { display: flex; align-items: center; min-width: 0; }
-.intro-visual.has-photo { position: relative; overflow: hidden; align-items: flex-end; min-height: clamp(280px, 30vw, 400px); background: var(--paper); }
+.intro-visual.has-photo { position: relative; overflow: hidden; align-items: flex-start; min-height: clamp(280px, 30vw, 400px); background: var(--paper); }
 .intro-visual.has-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.intro-visual.has-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, .08) 0%, rgba(255, 255, 255, .45) 45%, rgba(255, 255, 255, .92) 100%); }
+.intro-visual.has-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(255, 255, 255, .08) 0%, rgba(255, 255, 255, .45) 55%, rgba(255, 255, 255, .92) 100%); }
 .intro-visual.has-photo .statement { position: relative; z-index: 1; padding: clamp(20px, 3vw, 32px); font-size: clamp(26px, 2.7vw, 36px); }
 .intro .body { align-self: center; }
 
