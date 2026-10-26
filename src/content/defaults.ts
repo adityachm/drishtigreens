@@ -78,6 +78,7 @@ export const DEFAULTS: Docs = {
       },
     ],
     intro_statement: 'Rooted in nature. Designed for life.',
+    intro_image: 'seed-06',
     intro_body:
       'At Drishti Greens, nature is more than our profession — it is a part of who we are. With both partners hailing from the beautiful Western Ghats, we share a deep-rooted love for greenery and a personal commitment to preserving nature.\n\nFrom designing beautiful gardens and landscapes to creating forests through native tree plantation, afforestation and ecological restoration, we strive to bring people closer to nature. We also support forest creation and carbon credit projects, helping businesses explore sustainable environmental initiatives for a greener future.',
   },

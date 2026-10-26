@@ -52,6 +52,7 @@ export type Home = {
   hero: HeroSlide[];
   intro_statement: string;
   intro_body: string;
+  intro_image: string;
 };
 
 export type About = {
@@ -163,6 +164,7 @@ export const DOCS: DocDef[] = [
         fields: [
           { type: 'text', key: 'intro_statement', label: 'Statement', max: 80 },
           { type: 'textarea', key: 'intro_body', label: 'Text', rows: 4, help: paraHelp },
+          { type: 'image', key: 'intro_image', label: 'Background photo', help: 'Shown behind the introduction under a dark green tint. Wide, calm photos work best.' },
         ],
       },
       {
